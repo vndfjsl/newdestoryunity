@@ -1,8 +1,10 @@
-using Microsoft.Unity.VisualStudio.Editor;
+// 미완성
+
+using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.UI;
 
 public enum eFadeState
 {
@@ -37,8 +39,56 @@ public class Fade : MonoBehaviour
         }
     }
 
+    IEnumerator None() // 결과 반환
+    {
+        yield return null;
+        fadeState = eFadeState.FadeOut;
+        NextState();
+    }
+
+    IEnumerator FadeOut()
+    {
+        float alpha = 0f;
+        while(fadeState == eFadeState.FadeOut)
+        {
+            if(alpha < 1)
+            {
+                alpha += Time.deltaTime;
+            }
+            else
+            {
+                fadeState = eFadeState.ChangeBG;
+            }
+
+            alpha = Mathf.Clamp(alpha, 0, 1);
+            Color c = imgBg.color;
+            c.a = alpha;
+            imgBg.color = c;
+            // imgBg.color = new color: 좋은 건 아님.
+            yield return new WaitForSeconds(0.5f);
+        }
+        NextState();
+    }
+
+
+
+    private void Die()
+    {
+        Debug.Log("asdasd"); // NextState에서불러옴
+    }
+    
     void NextState()
     {
-        Method mthis.GetType().GetMethod("Update", BindingFlags.NonPublic | BindingFlags.Instance);
+        MethodInfo mInfo = this.GetType().GetMethod(fadeState.ToString(), BindingFlags.NonPublic | BindingFlags.Instance);
+        iStateCo = (IEnumerator)mInfo.Invoke(this, null);
+        StartCoroutine(iStateCo);
+        //Player a = new Player();
+        //a.name = "나선환";
+        //Player b = new Player();
+        //b.name = "그분";
+
+        //MethodInfo m = Type.GetType("Player").GetMethod("Move", BindingFlags.Public | BindingFlags.Instance);
+
+        //m.Invoke(this, null); // a넣으면 나선환나오고 b넣으면 그분이오십니다
     }
 }

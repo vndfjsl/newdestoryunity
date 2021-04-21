@@ -9,7 +9,7 @@ public class Player
 
     public void Move()
     {
-
+        Debug.Log("움직이면 " + name + "은 사라져");
     }
     private void Die()
     {
