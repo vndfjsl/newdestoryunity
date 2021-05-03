@@ -27,6 +27,17 @@ public class PlayersGun : MonoBehaviour
     public float reloadTime = 1.0f; //재장전 시간
     public float lastFireTime; //마지막으로 총을 발사한 시간
 
+    [Header("Audio Clips")]
+    public AudioClip reloadSound;
+    public AudioClip fireSound;
+
+    private AudioSource audioSource;
+
+    private void Awake()
+    {
+        audioSource = this.gameObject.GetComponent<AudioSource>();
+    }
+
     void Start()
     {
         magAmmo = magCapacity;
@@ -39,12 +50,16 @@ public class PlayersGun : MonoBehaviour
         if (state == State.Ready && Time.time >= lastFireTime + timeBetFire)
         {
             lastFireTime = Time.time;
+            
             Shot(); // 호출
         }
     }
 
     private void Shot()
     {
+        audioSource.clip = fireSound;
+        audioSource.Play();
+
         RaycastHit hit;
         Vector3 hitPosition = Vector3.zero;
         if(Physics.Raycast(firePosition.position, firePosition.forward, out hit, fireDistance))
@@ -86,15 +101,61 @@ public class PlayersGun : MonoBehaviour
         {
             return false;
         }
+        
         StartCoroutine(ReloadRoutine());
         return true;
     }
 
     public IEnumerator ReloadRoutine()
     {
+        audioSource.clip = reloadSound;
+        audioSource.Play();
+
         state = State.Reloading;
         yield return new WaitForSeconds(reloadTime);
         magAmmo = magCapacity;
         state = State.Ready;
+    }
+
+    private void PlaySound()
+    {
+        #region 예전에만든거
+        /*
+         
+         public void PlaySound(string idle)
+    {
+        switch(idle)
+        {
+            case "use":
+                    audioSource.clip = useSound;
+                break;
+
+            case "gameover":
+                    audioSource.clip = gameoverSound;
+                break;
+
+            case "jump":
+                    audioSource.clip = jumpSound;
+                break;
+
+            case "walk":
+                if (audioSource.isPlaying == false)
+                {
+                    audioSource.clip = walkSound;
+                }
+                break;
+
+            case "waterdamage":
+                    audioSource.clip = waterDamageSound;
+                break;
+        }
+        if (!audioSource.isPlaying)
+        {
+            audioSource.Play();
+        }
+    }
+         */
+
+        #endregion
     }
 }
