@@ -108,10 +108,10 @@ public class PlayersGun : MonoBehaviour
 
     public IEnumerator ReloadRoutine()
     {
+        state = State.Reloading;
         audioSource.clip = reloadSound;
         audioSource.Play();
 
-        state = State.Reloading;
         yield return new WaitForSeconds(reloadTime);
         magAmmo = magCapacity;
         state = State.Ready;
