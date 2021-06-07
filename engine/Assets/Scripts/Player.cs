@@ -6,9 +6,36 @@ public class Player : MonoBehaviour
 {
     public int currentX = 0;
     public int currentY = 1;
+    public int hp = 100;
+    public int mp = 100;
 
     public List<int> nextBehavior = new List<int>();
     public int behaviorIndex = 0;
+
+    //public int[] playerAttackCollisions; // 플레이어 공격스킬범위. 123456789 순서대로
+    /*
+     * 123
+     * 456
+     * 789
+     * 0b 010 111 010 = 십자가
+     * = 010
+     *   111
+     *   010
+     * 
+     */
+
+    //private void Start()
+    //{
+    //    SetAttackCollision();
+    //}
+
+    //public void SetAttackCollision()
+    //{
+    //    playerAttackCollisions[0] = 0b000011000; // 000 011 000, 정면공격
+    //    playerAttackCollisions[1] = 0b111111111; // 111 111 111, 전체공격
+    //    playerAttackCollisions[2] = 0b000101000; // 010 101 000, 좌우공격
+    //    playerAttackCollisions[3] = 0b011011011; // 011 011 011, 전방휩쓸기
+    //}
 
     public void Move()
     {
@@ -41,7 +68,13 @@ public class Player : MonoBehaviour
                     currentX += 1;
                 }
                 break;
+            case (int)Behavior.KnifeAttack:
+                MoveMap.Instance.AttackProcess((int)Behavior.KnifeAttack, true); // 뒤에true는 플레이어인지아닌지검사
+                break;
         }
+        behaviorIndex = (behaviorIndex + 1) % 3;
+
+        // hp -= 20;
     }
 
     public void InitBehavior()

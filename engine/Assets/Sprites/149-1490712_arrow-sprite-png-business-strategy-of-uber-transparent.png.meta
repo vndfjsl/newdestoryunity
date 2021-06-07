@@ -13,16 +13,16 @@ TextureImporter:
     second: 149-1490712_arrow-sprite-png-business-strategy-of-uber-transparent_2
   - first:
       213: 2653416774208892206
-    second: 149-1490712_arrow-sprite-png-business-strategy-of-uber-transparent_3
+    second: up
   - first:
       213: -7400221760846412427
-    second: 149-1490712_arrow-sprite-png-business-strategy-of-uber-transparent_4
+    second: down
   - first:
       213: -6203880021779701099
-    second: 149-1490712_arrow-sprite-png-business-strategy-of-uber-transparent_5
+    second: left
   - first:
       213: 9122581040493103969
-    second: 149-1490712_arrow-sprite-png-business-strategy-of-uber-transparent_6
+    second: right
   - first:
       213: -3936330217196135469
     second: 149-1490712_arrow-sprite-png-business-strategy-of-uber-transparent_7
@@ -138,7 +138,7 @@ TextureImporter:
         width: 195
         height: 195
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -159,7 +159,7 @@ TextureImporter:
         width: 195
         height: 195
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -180,7 +180,7 @@ TextureImporter:
         width: 195
         height: 195
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -193,7 +193,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: 149-1490712_arrow-sprite-png-business-strategy-of-uber-transparent_3
+      name: up
       rect:
         serializedVersion: 2
         x: 0
@@ -201,7 +201,7 @@ TextureImporter:
         width: 195
         height: 195
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -214,7 +214,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: 149-1490712_arrow-sprite-png-business-strategy-of-uber-transparent_4
+      name: down
       rect:
         serializedVersion: 2
         x: 195
@@ -222,7 +222,7 @@ TextureImporter:
         width: 195
         height: 195
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -235,7 +235,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: 149-1490712_arrow-sprite-png-business-strategy-of-uber-transparent_5
+      name: left
       rect:
         serializedVersion: 2
         x: 390
@@ -243,7 +243,7 @@ TextureImporter:
         width: 195
         height: 195
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -256,7 +256,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: 149-1490712_arrow-sprite-png-business-strategy-of-uber-transparent_6
+      name: right
       rect:
         serializedVersion: 2
         x: 0
@@ -264,7 +264,7 @@ TextureImporter:
         width: 195
         height: 195
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -285,7 +285,7 @@ TextureImporter:
         width: 195
         height: 195
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
@@ -306,7 +306,7 @@ TextureImporter:
         width: 195
         height: 195
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []

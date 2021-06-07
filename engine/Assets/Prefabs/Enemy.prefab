@@ -124,5 +124,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   currentX: 3
   currentY: 1
-  nextBehavior: 000000000200000001000000
+  hp: 100
+  mp: 100
+  nextBehavior: 
   behaviorIndex: 0
+  enemyAttackCollisions: 00000000000000000000000000000000

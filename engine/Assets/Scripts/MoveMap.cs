@@ -8,7 +8,8 @@ public enum Behavior
     UP,
     DOWN,
     LEFT,
-    RIGHT
+    RIGHT,
+    KnifeAttack
 }
 
 public class MoveMap : MonoBehaviour
@@ -55,8 +56,8 @@ public class MoveMap : MonoBehaviour
 
     
 
-    public Transform[] inputMap;
-    public Transform[,] sliceMap = new Transform[3, 4];
+    public TileBox[] inputMap;
+    public TileBox[,] sliceMap = new TileBox[3, 4];
 
     public GameObject playerPrefab;
     public GameObject enemyPrefab;
@@ -67,10 +68,10 @@ public class MoveMap : MonoBehaviour
 
     public int turn = 0;
 
-    public int keyInputCount = 0;
+    public int keyInputCount = 0; // 스킬3개
     public int behaviorSequence = 0; // 1턴마다 3번 행동하는거
 
-    public Sprite[] keySprite; // 위 아래 왼쪽 오른쪽
+    public Sprite[] keySprite; // 위 아래 왼쪽 오른쪽 , 공격
     public Image[] inGameKeyInput;
 
     public Text currentTurnText;
@@ -80,8 +81,20 @@ public class MoveMap : MonoBehaviour
     public GameObject[] behaviorButtons;
     public GameObject onBehaviorButton;
     public GameObject behaviorSetting;
-    public int skillSequence = 0; // 한턴에 스킬3번
     public Behavior nextBehavior;
+
+    [Header("체력과 마나")]
+    public Image playerHPGauge;
+    public Image playerMPGauge;
+    public Image enemyHPGauge;
+    public Image enemyMPGauge;
+    public Text playerHPText;
+    public Text playerMPText;
+    public Text enemyHPText;
+    public Text enemyMPText;
+    public GameObject playerWinPanel;
+    public GameObject enemyWinPanel;
+    public GameObject drawPanel;
 
     void Start()
     {
@@ -91,44 +104,7 @@ public class MoveMap : MonoBehaviour
         HidePanel();
     }
 
-    //void Update()
-    //{
-    //      {
-    //        //else if(Input.GetKeyDown(KeyCode.UpArrow))
-    //        //{
-    //        //    inputKeys.Add(KeyCode.UpArrow);
-    //        //    keyInputCount++;
-    //        //    DisplayKeyInput();
-    //        //}
-    //        //else if (Input.GetKeyDown(KeyCode.DownArrow))
-    //        //{
-    //        //    inputKeys.Add(KeyCode.DownArrow);
-    //        //    keyInputCount++;
-    //        //    DisplayKeyInput();
-    //        //}
-    //        //else if (Input.GetKeyDown(KeyCode.LeftArrow))
-    //        //{
-    //        //    inputKeys.Add(KeyCode.LeftArrow);
-    //        //    keyInputCount++;
-    //        //    DisplayKeyInput();
-    //        //}
-    //        //else if (Input.GetKeyDown(KeyCode.RightArrow))
-    //        //{
-    //        //    inputKeys.Add(KeyCode.RightArrow);
-    //        //    keyInputCount++;
-    //        //    DisplayKeyInput();
-    //        //}
-    //    }
-    //    // inputWant가 트루일때 키3개받기
-    //}
-
-    public void InitButtonIndex()
-    {
-        for(int i=0; i<behaviorButtons.Length; i++)
-        {
-            behaviorButtons[i].GetComponent<BehaviorButton>().buttonIndex = i;
-        }
-    }
+    
 
     public void SetMap()
     {
@@ -137,15 +113,23 @@ public class MoveMap : MonoBehaviour
             for (int j = 0; j < 4; j++)
             {
                 sliceMap[i,j] = inputMap[4 * i + j];
-                Debug.Log(sliceMap[i, j].position);
+                Debug.Log(sliceMap[i, j].transform.position);
             }
         }
     }
 
     public void PlayerSpawn()
     {
-        player = Instantiate(playerPrefab, sliceMap[1, 0].position, Quaternion.identity).GetComponent<Player>();
-        enemy = Instantiate(enemyPrefab, sliceMap[1, 3].position, Quaternion.identity).GetComponent<Enemy>();
+        player = Instantiate(playerPrefab, sliceMap[1, 0].transform.position, Quaternion.identity).GetComponent<Player>();
+        enemy = Instantiate(enemyPrefab, sliceMap[1, 3].transform.position, Quaternion.identity).GetComponent<Enemy>();
+    }
+
+    public void InitButtonIndex()
+    {
+        for (int i = 0; i < behaviorButtons.Length; i++)
+        {
+            behaviorButtons[i].GetComponent<BehaviorButton>().buttonIndex = i;
+        }
     }
 
     public void NextBehavior()
@@ -154,12 +138,13 @@ public class MoveMap : MonoBehaviour
         enemy.Move();
 
         Debug.Log($"X: {player.currentX}, Y: {player.currentY}");
-        player.transform.position = sliceMap[player.currentY, player.currentX].position;
-        enemy.transform.position = sliceMap[enemy.currentY, enemy.currentX].position;
+        player.transform.position = sliceMap[player.currentY, player.currentX].transform.position;
+        enemy.transform.position = sliceMap[enemy.currentY, enemy.currentX].transform.position;
 
         behaviorSequence++;
         if(behaviorSequence >= 3)
         {
+            behaviorSequence = 0;
             NextTurn();
         }
     }
@@ -167,10 +152,9 @@ public class MoveMap : MonoBehaviour
     public void NextTurn()
     {
         turn++; // 1턴추가요
-        behaviorSequence = 0;
         player.InitBehavior(); // 행동넣은거 초기화
         keyInputCount = 0; // 행동입력한횟수 초기화
-        for(int i=0; i<3; i++)
+        for (int i=0; i<3; i++)
         {
             inGameKeyInput[i].sprite = null;
         }
@@ -191,9 +175,97 @@ public class MoveMap : MonoBehaviour
 
     public void PressKey(int buttonIndex)
     {
-        player.nextBehavior.Add(buttonIndex);
-        keyInputCount++;
-        inGameKeyInput[skillSequence].sprite = keySprite[buttonIndex];
-        skillSequence = (skillSequence + 1) % 3; // 0 1 2 돌아가면서 반복하는거
+        if (keyInputCount < 3)
+        {
+            player.nextBehavior.Add(buttonIndex);
+            inGameKeyInput[keyInputCount].sprite = keySprite[buttonIndex];
+            keyInputCount++;
+        }
+        else
+        {
+            Debug.LogError("3개이상 입력하셨습니다.");
+        }
+    }
+
+    public void CheckHP()
+    {
+        Debug.Log("체력체크");
+        playerHPText.text = player.hp.ToString(); // UI 업데이트
+        playerHPGauge.fillAmount = player.hp / 100f;
+
+        enemyHPText.text = enemy.hp.ToString();
+        enemyHPGauge.fillAmount = enemy.hp / 100f;
+
+
+
+        if (player.hp <= 0 && enemy.hp <= 0)
+        {
+            Debug.Log("Draw!");
+            drawPanel.SetActive(true);
+        }
+        else if (player.hp <= 0) // 피 0인지 체크
+        {
+            Debug.Log("Enemy is Win!");
+            enemyWinPanel.SetActive(true);
+        }
+        else if (enemy.hp <= 0)
+        {
+            Debug.Log("Player is Win!");
+            playerWinPanel.SetActive(true);
+        }
+    }
+
+    public void AttackProcess(int attackType, bool isplayer)
+    {
+        if (isplayer)
+        {
+            StartCoroutine(ShowAttackCollision(attackType));
+        }
+        else
+        {
+            // 적의 공격.
+        }
+            
+
+            // 공격판정
+            // 공격범위 삭제
+    }
+
+    public IEnumerator ShowAttackCollision(int attackType)
+    {
+        switch(attackType)
+        {
+            case (int)Behavior.KnifeAttack:
+                {
+                    bool isDamage = false;
+
+                    sliceMap[player.currentY, player.currentX + 1].SetColor(Color.red);
+                    sliceMap[player.currentY, player.currentX].SetColor(Color.red);
+
+                    yield return new WaitForSeconds(1f);
+
+                    if (sliceMap[player.currentY, player.currentX + 1] == sliceMap[enemy.currentY, enemy.currentX])
+                        isDamage = true;
+                    if (sliceMap[player.currentY, player.currentX] == sliceMap[enemy.currentY, enemy.currentX])
+                    {
+                        Debug.Log("겹쳤다");
+                        isDamage = true;
+                    }
+                    if (isDamage)
+                    {
+                        Debug.Log("피까임");
+                        enemy.hp -= 30;
+                    }
+                    CheckHP();
+                    sliceMap[player.currentY, player.currentX].SetColor(Color.white);
+                    sliceMap[player.currentY, player.currentX + 1].SetColor(Color.white);
+                    
+                }
+                break;
+            default:
+                Debug.Log("공격스킬이 아닌거같은데");
+                break;
+        }
+        
     }
 }
