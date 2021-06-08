@@ -12,6 +12,8 @@ public class Player : MonoBehaviour
     public List<int> nextBehavior = new List<int>();
     public int behaviorIndex = 0;
 
+    public Transform attack1Trm;
+
     //public int[] playerAttackCollisions; // 플레이어 공격스킬범위. 123456789 순서대로
     /*
      * 123

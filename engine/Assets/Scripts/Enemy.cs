@@ -12,6 +12,8 @@ public class Enemy : MonoBehaviour
     public List<int> nextBehavior = new List<int>();
     public int behaviorIndex = 0;
 
+    public Transform attack1Trm;
+
     //public int[] enemyAttackCollisions; // 플레이어 공격스킬범위. 123456789 순서대로
     /*
      * 123
@@ -27,7 +29,7 @@ public class Enemy : MonoBehaviour
     public void Start()
     {
         SetAttackCollision();
-        SetBehavior(new char[6] {'w','a','s','s','a','d' });
+        EnemySetBehavior();
     }
 
     public void SetAttackCollision()
@@ -67,34 +69,39 @@ public class Enemy : MonoBehaviour
                 }
                 break;
             case (int)Behavior.KnifeAttack:
+                Debug.Log("적의 공격");
                 MoveMap.Instance.AttackProcess((int)Behavior.KnifeAttack, false);
                 break;
         }
-        behaviorIndex++;
+        behaviorIndex = (behaviorIndex + 1) % 3;
     }
 
-    public void SetBehavior(char[] bhArr)
+    public void EnemySetBehavior()
     {
-        for(int i=0; i<bhArr.Length; i++)
+        nextBehavior.Clear();
+
+        for (int i=0; i<3; i++)
         {
-            switch(bhArr[i])
+            int behaviorType = Random.Range(0, 5); // 0~4
+            switch(behaviorType)
             {
-                case 'w':
+                case 0:
                     nextBehavior.Add((int)Behavior.UP);
                     break;
 
-                case 'a':
+                case 1:
                     nextBehavior.Add((int)Behavior.LEFT);
                     break;
 
-                case 's':
+                case 2:
                     nextBehavior.Add((int)Behavior.DOWN);
                     break;
 
-                case 'd':
+                case 3:
                     nextBehavior.Add((int)Behavior.RIGHT);
                     break;
-                case 'K':
+                case 4:
+                    
                     nextBehavior.Add((int)Behavior.KnifeAttack);
                     break;
             }

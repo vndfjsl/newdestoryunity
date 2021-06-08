@@ -75,9 +75,10 @@ public class MoveMap : MonoBehaviour
     public Image[] inGameKeyInput;
 
     public Text currentTurnText;
-    
+
 
     [Header("행동버튼 관련")]
+    public GameObject tutorialUI;
     public GameObject[] behaviorButtons;
     public GameObject onBehaviorButton;
     public GameObject behaviorSetting;
@@ -96,15 +97,23 @@ public class MoveMap : MonoBehaviour
     public GameObject enemyWinPanel;
     public GameObject drawPanel;
 
+    [Header("공격 관련")]
+    public float attackDelayTime = 0.5f;
+    public GameObject attack1Prefab;
+
     void Start()
     {
+        Tutorial();
         SetMap();
         PlayerSpawn();
         InitButtonIndex();
         HidePanel();
     }
 
-    
+    public void Tutorial()
+    {
+        tutorialUI.SetActive(true);
+    }
 
     public void SetMap()
     {
@@ -135,6 +144,7 @@ public class MoveMap : MonoBehaviour
     public void NextBehavior()
     {
         player.Move();
+        
         enemy.Move();
 
         Debug.Log($"X: {player.currentX}, Y: {player.currentY}");
@@ -153,6 +163,8 @@ public class MoveMap : MonoBehaviour
     {
         turn++; // 1턴추가요
         player.InitBehavior(); // 행동넣은거 초기화
+        enemy.EnemySetBehavior(); // 적 행동 다시설정
+
         keyInputCount = 0; // 행동입력한횟수 초기화
         for (int i=0; i<3; i++)
         {
@@ -187,14 +199,20 @@ public class MoveMap : MonoBehaviour
         }
     }
 
-    public void CheckHP()
+    public void CheckHPMP()
     {
         Debug.Log("체력체크");
-        playerHPText.text = player.hp.ToString(); // UI 업데이트
+        playerHPText.text = $"{player.hp} / 100"; // UI 업데이트
         playerHPGauge.fillAmount = player.hp / 100f;
 
-        enemyHPText.text = enemy.hp.ToString();
+        playerMPText.text = $"{player.mp} / 100"; // UI 업데이트
+        playerMPGauge.fillAmount = player.mp / 100f;
+
+        enemyHPText.text = $"{enemy.hp} / 100";
         enemyHPGauge.fillAmount = enemy.hp / 100f;
+
+        enemyMPText.text = $"{enemy.mp} / 100";
+        enemyMPGauge.fillAmount = enemy.mp / 100f;
 
 
 
@@ -217,48 +235,92 @@ public class MoveMap : MonoBehaviour
 
     public void AttackProcess(int attackType, bool isplayer)
     {
-        if (isplayer)
-        {
-            StartCoroutine(ShowAttackCollision(attackType));
-        }
-        else
-        {
-            // 적의 공격.
-        }
+            StartCoroutine(ShowAttackCollision(attackType, isplayer));
             
 
             // 공격판정
             // 공격범위 삭제
     }
 
-    public IEnumerator ShowAttackCollision(int attackType)
+    public IEnumerator ShowAttackCollision(int attackType, bool isplayer)
     {
-        switch(attackType)
+        bool isDamage = false;
+
+        switch (attackType)
         {
             case (int)Behavior.KnifeAttack:
                 {
-                    bool isDamage = false;
+                    if (isplayer) // 플레이어 공격일시
+                    {
+                        player.mp -= 10;
 
-                    sliceMap[player.currentY, player.currentX + 1].SetColor(Color.red);
-                    sliceMap[player.currentY, player.currentX].SetColor(Color.red);
+                        if (sliceMap[player.currentY, player.currentX + 1] != null)
+                        {
+                            sliceMap[player.currentY, player.currentX + 1].SetColor(Color.red); // 공격범위 표시
+                        }
+                        if (sliceMap[player.currentY, player.currentX] == null)
+                        {
+                            sliceMap[player.currentY, player.currentX].SetColor(Color.red);
+                        }
 
-                    yield return new WaitForSeconds(1f);
+                        GameObject attack1Effect = Instantiate(attack1Prefab, player.attack1Trm.position, Quaternion.identity); // 공격이펙트
+                        Destroy(attack1Effect, attackDelayTime);
+                    }
+                    else // 적의 공격일시
+                    {
+                        enemy.mp -= 10;
 
-                    if (sliceMap[player.currentY, player.currentX + 1] == sliceMap[enemy.currentY, enemy.currentX])
-                        isDamage = true;
+                        if (sliceMap[enemy.currentY, enemy.currentX - 1] != null)
+                        {
+                            sliceMap[enemy.currentY, enemy.currentX - 1].SetColor(Color.red); // 공격범위 표시
+                        }
+                        if (sliceMap[enemy.currentY, enemy.currentX] != null)
+                        {
+                            sliceMap[enemy.currentY, enemy.currentX].SetColor(Color.red);
+                        }
+
+                        GameObject attack1Effect = Instantiate(attack1Prefab, enemy.attack1Trm.position, Quaternion.identity); // 공격이펙트
+                        Destroy(attack1Effect, attackDelayTime);
+                    }
+
+                    yield return new WaitForSeconds(attackDelayTime);
+
+                    if (isplayer) // 플레이어 공격일시
+                    {
+                        if (sliceMap[player.currentY, player.currentX + 1] == sliceMap[enemy.currentY, enemy.currentX]) // 공격판정
+                            isDamage = true;
+                    }
+                    else // 적의 공격일시
+                    {
+                        if (sliceMap[enemy.currentY, enemy.currentX - 1] == sliceMap[player.currentY, player.currentX]) // 공격판정
+                            isDamage = true;
+                    }
+                    
                     if (sliceMap[player.currentY, player.currentX] == sliceMap[enemy.currentY, enemy.currentX])
                     {
                         Debug.Log("겹쳤다");
                         isDamage = true;
                     }
+
+
                     if (isDamage)
                     {
                         Debug.Log("피까임");
-                        enemy.hp -= 30;
+                        if (isplayer)
+                        {
+                            enemy.hp -= 30;
+                        }
+                        else
+                        {
+                            player.hp -= 30;
+                            sliceMap[enemy.currentY, enemy.currentX].SetColor(Color.white);
+                            sliceMap[enemy.currentY, enemy.currentX - 1].SetColor(Color.white);
+                        }
                     }
-                    CheckHP();
-                    sliceMap[player.currentY, player.currentX].SetColor(Color.white);
-                    sliceMap[player.currentY, player.currentX + 1].SetColor(Color.white);
+
+                    CheckHPMP();
+                    TileClear();
+
                     
                 }
                 break;
@@ -268,4 +330,16 @@ public class MoveMap : MonoBehaviour
         }
         
     }
+
+    public void TileClear()
+    {
+        for(int i=0; i<3; i++)
+        {
+            for(int j=0; j<4; j++)
+            {
+                sliceMap[i, j].SetColor(Color.white);
+            }
+        }
+    }
 }
+
