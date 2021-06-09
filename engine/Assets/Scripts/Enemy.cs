@@ -13,6 +13,7 @@ public class Enemy : MonoBehaviour
     public int behaviorIndex = 0;
 
     public Transform attack1Trm;
+    public Transform attack2Trm;
 
     //public int[] enemyAttackCollisions; // 플레이어 공격스킬범위. 123456789 순서대로
     /*
@@ -69,8 +70,16 @@ public class Enemy : MonoBehaviour
                 }
                 break;
             case (int)Behavior.KnifeAttack:
-                Debug.Log("적의 공격");
-                MoveMap.Instance.AttackProcess((int)Behavior.KnifeAttack, false);
+                Debug.Log("Enemy Attack! Knife");
+                MoveMap.Instance.ShowAttackCollision((int)Behavior.KnifeAttack, false);
+                break;
+            case (int)Behavior.Pike:
+                Debug.Log("Enemy Attack! Pike");
+                MoveMap.Instance.ShowAttackCollision((int)Behavior.Pike, false);
+                break;
+            case (int)Behavior.Shield:
+                Debug.Log("Enemy Attack! Shield");
+                MoveMap.Instance.ShowAttackCollision((int)Behavior.Shield, false);
                 break;
         }
         behaviorIndex = (behaviorIndex + 1) % 3;
@@ -101,8 +110,13 @@ public class Enemy : MonoBehaviour
                     nextBehavior.Add((int)Behavior.RIGHT);
                     break;
                 case 4:
-                    
                     nextBehavior.Add((int)Behavior.KnifeAttack);
+                    break;
+                case (int)Behavior.Pike:
+                    nextBehavior.Add((int)Behavior.Pike);
+                    break;
+                case (int)Behavior.Shield:
+                    nextBehavior.Add((int)Behavior.Shield);
                     break;
             }
         }

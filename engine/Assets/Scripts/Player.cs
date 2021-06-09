@@ -13,6 +13,7 @@ public class Player : MonoBehaviour
     public int behaviorIndex = 0;
 
     public Transform attack1Trm;
+    public Transform attack2Trm;
 
     //public int[] playerAttackCollisions; // 플레이어 공격스킬범위. 123456789 순서대로
     /*
@@ -71,7 +72,13 @@ public class Player : MonoBehaviour
                 }
                 break;
             case (int)Behavior.KnifeAttack:
-                MoveMap.Instance.AttackProcess((int)Behavior.KnifeAttack, true); // 뒤에true는 플레이어인지아닌지검사
+                MoveMap.Instance.ShowAttackCollision((int)Behavior.KnifeAttack, true); // 뒤에true는 플레이어인지아닌지검사
+                break;
+            case (int)Behavior.Pike:
+                MoveMap.Instance.ShowAttackCollision((int)Behavior.Pike, true);
+                break;
+            case (int)Behavior.Shield:
+                MoveMap.Instance.ShowAttackCollision((int)Behavior.Shield, true);
                 break;
         }
         behaviorIndex = (behaviorIndex + 1) % 3;
