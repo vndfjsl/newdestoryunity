@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using DG.Tweening;
 
 public class Player : MonoBehaviour
 {
@@ -8,12 +9,10 @@ public class Player : MonoBehaviour
     public int currentY = 1;
     public int hp = 100;
     public int mp = 100;
+    public int armor = 0;
 
     public List<int> nextBehavior = new List<int>();
     public int behaviorIndex = 0;
-
-    public Transform attack1Trm;
-    public Transform attack2Trm;
 
     //public int[] playerAttackCollisions; // 플레이어 공격스킬범위. 123456789 순서대로
     /*
@@ -72,17 +71,18 @@ public class Player : MonoBehaviour
                 }
                 break;
             case (int)Behavior.KnifeAttack:
-                MoveMap.Instance.ShowAttackCollision((int)Behavior.KnifeAttack, true); // 뒤에true는 플레이어인지아닌지검사
+                StartCoroutine(MoveMap.Instance.ShowAttackCollision(Behavior.KnifeAttack, true)); // 뒤에true는 플레이어인지아닌지검사
                 break;
             case (int)Behavior.Pike:
-                MoveMap.Instance.ShowAttackCollision((int)Behavior.Pike, true);
+                StartCoroutine(MoveMap.Instance.ShowAttackCollision(Behavior.Pike, true));
                 break;
             case (int)Behavior.Shield:
-                MoveMap.Instance.ShowAttackCollision((int)Behavior.Shield, true);
+                StartCoroutine(MoveMap.Instance.ShowAttackCollision(Behavior.Shield, true));
                 break;
         }
+        // transform.position = MoveMap.Instance.sliceMap[currentY, currentX].transform.position;
+        transform.DOMove(MoveMap.Instance.sliceMap[currentY, currentX].transform.position, 1f);
         behaviorIndex = (behaviorIndex + 1) % 3;
-
         // hp -= 20;
     }
 

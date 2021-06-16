@@ -1,7 +1,9 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using DG.Tweening;
 
 public enum Behavior
 {
@@ -64,6 +66,7 @@ public class MoveMap : MonoBehaviour
     [Header("플레이어와 적")]
     public GameObject playerPrefab;
     public GameObject enemyPrefab;
+
     private Player player;
     private Enemy enemy;
 
@@ -73,10 +76,12 @@ public class MoveMap : MonoBehaviour
     public GameObject onBehaviorButton;
     public GameObject behaviorSetting;
     public Behavior nextBehavior;
+    public Button nextBehaviorButton; // 행동 다정한후누르는거. 임시로받아옴
     public Sprite[] keySprite; // 위 아래 왼쪽 오른쪽 , 공격
     public int keyInputCount = 0; // 스킬3개
     public int behaviorSequence = 0; // 1턴마다 3번 행동하는거
     public Image[] inGameKeyInput;
+    public Image[] enemyGameKeyInput;
     public Text currentTurnText;
     public int turn = 0;
 
@@ -95,16 +100,36 @@ public class MoveMap : MonoBehaviour
 
     [Header("공격 관련")]
     public float attackDelayTime = 0.5f;
-    public GameObject attack1Prefab;
-    public GameObject attack2Prefab;
+    public GameObject attack1Prefab; // 단검
+    public GameObject attack2Prefab; // 파이크
+    public GameObject attack3Prefab; // 방패
+
+    private Dictionary<Behavior, SkillDataVO> typeData = new Dictionary<Behavior, SkillDataVO>();
 
     void Start()
     {
+        //타입별 마나코스트 책정
+        SkillDataVO attackData1 = new SkillDataVO(attack1Prefab, 10, 50, new List<Vector2>() { new Vector2(0,0), new Vector2(1,0)}, new Vector3(0.5f, 0, 0), false);
+        typeData.Add(Behavior.KnifeAttack, attackData1);
+        SkillDataVO attackData2 = new SkillDataVO(attack2Prefab, 30, 25, new List<Vector2>() { 
+            new Vector2(0, 0), 
+            new Vector2(0, 1), 
+            new Vector2(1, 1), 
+            new Vector2(1, 0), 
+            new Vector2(0, -1), 
+            new Vector2(1, -1) }, new Vector3(0.5f, 0, 0), false);
+        typeData.Add(Behavior.Pike, attackData2);
+        SkillDataVO buffData1 = new SkillDataVO(attack3Prefab, -20, 0, new List<Vector2>() { new Vector2(0, 0) }, new Vector3(0.5f,0,0), true); // 방 어
+        typeData.Add(Behavior.Shield, buffData1);
+        
+
+        //타입별 프리팹 책정
+
+
         Tutorial();
         SetMap();
         PlayerSpawn();
         InitButtonIndex();
-        HidePanel();
     }
 
     public void Tutorial()
@@ -122,6 +147,8 @@ public class MoveMap : MonoBehaviour
                 Debug.Log(sliceMap[i, j].transform.position);
             }
         }
+
+        
     }
 
     public void PlayerSpawn()
@@ -138,17 +165,44 @@ public class MoveMap : MonoBehaviour
         }
     }
 
-    public void NextBehavior()
+
+
+    public void TempStartNextBehavior()
     {
-        player.Move();
+        StartCoroutine(NextBehavior());
+    }
+
+    public IEnumerator NextBehavior()
+    {
+        HidePanel(); // 행동선택완료니까 패널은끄고
+        yield return new WaitForSeconds(0.5f); // 패널끄는동안 대기시간
+
+        if (keyInputCount < 3)
+        {
+            Debug.Log("스킬 3개를 등록하지 않았습니다!");
+            yield break;
+        }
+        nextBehaviorButton.interactable = false;
         
-        enemy.Move();
 
-        Debug.Log($"X: {player.currentX}, Y: {player.currentY}");
-        player.transform.position = sliceMap[player.currentY, player.currentX].transform.position;
-        enemy.transform.position = sliceMap[enemy.currentY, enemy.currentX].transform.position;
+        for (int i=0; i<3; i++)
+        {
+            player.Move();
+            enemy.Move();
+            enemyGameKeyInput[i].sprite = keySprite[enemy.nextBehavior[i]];
+            // 적 행동 보여주기
 
-        behaviorSequence++;
+
+            // Debug.Log($"X: {player.currentX}, Y: {player.currentY}");
+
+            yield return new WaitForSeconds(2f);
+
+            player.armor = 0;
+            enemy.armor = 0; // 턴끝나서 방어도 초기화
+
+            behaviorSequence++;
+        }
+        
         if(behaviorSequence >= 3)
         {
             behaviorSequence = 0;
@@ -161,13 +215,15 @@ public class MoveMap : MonoBehaviour
         turn++; // 1턴추가요
         player.InitBehavior(); // 행동넣은거 초기화
         enemy.EnemySetBehavior(); // 적 행동 다시설정
+        InitShowEnemyBehavior();
 
         keyInputCount = 0; // 행동입력한횟수 초기화
         for (int i=0; i<3; i++)
         {
-            inGameKeyInput[i].sprite = null;
+            inGameKeyInput[i].sprite = null; // 스킬UI 초기화
         }
         currentTurnText.text = $"{turn} Turn";
+        nextBehaviorButton.interactable = true;
     }
 
     public void LoadPanel() // 행동버튼누르는패널 보이게
@@ -193,6 +249,14 @@ public class MoveMap : MonoBehaviour
         else
         {
             Debug.LogError("3개이상 입력하셨습니다.");
+        }
+    }
+
+    public void InitShowEnemyBehavior()
+    {
+        for (int i = 0; i < 3; i++)
+        {
+            enemyGameKeyInput[i].sprite = null;
         }
     }
 
@@ -230,107 +294,27 @@ public class MoveMap : MonoBehaviour
         }
     }
 
-    public void ShowAttackCollision(int attackType, bool isplayer)
+    public IEnumerator ShowAttackCollision(Behavior attackType, bool isplayer)
     {
-        switch (attackType)
+        yield return new WaitForSeconds(0.1f); // 이동보다 나중에 실행하기 위하여
+
+        SkillDataVO data = typeData[attackType];
+        Vector3 position; // 공격나오는위치
+
+        if (isplayer) // 플레이어일 시
         {
-            case (int)Behavior.KnifeAttack:
-                    if (isplayer) // 플레이어 공격일시
-                    {
-                        player.mp -= 10;
-
-                        GameObject attackEffect = Instantiate(attack1Prefab, player.attack1Trm.position, Quaternion.identity); // 공격이펙트
-                        Destroy(attackEffect, attackDelayTime);
-                        StartCoroutine(AttackDecision(true, 1, (0,0),(1,0) )); // player = true, 현재위치로부터 0,0과 1,0을 공격
-                    }
-                    else // 적의 공격일시
-                    {
-                        enemy.mp -= 10;
-
-                        #region 묶주석
-                        /*if (sliceMap[enemy.currentY, enemy.currentX - 1] != null)
-                        {
-                            sliceMap[enemy.currentY, enemy.currentX - 1].SetColor(Color.red); // 공격범위 표시
-                        }
-                        if (sliceMap[enemy.currentY, enemy.currentX] != null)
-                        {
-                            sliceMap[enemy.currentY, enemy.currentX].SetColor(Color.red);
-                        }*/
-                        #endregion
-                        GameObject attackEffect = Instantiate(attack1Prefab, enemy.attack1Trm.position, Quaternion.identity); // 공격이펙트
-                        Destroy(attackEffect, attackDelayTime);
-                        StartCoroutine(AttackDecision(false, 1, (0, 0), (-1, 0))); // player = true, 현재위치로부터 0,0과 1,0을 공격
-                    }
-                    break;
-                    // yield return new WaitForSeconds(attackDelayTime);
-
-                    //if (isplayer) // 플레이어 공격일시
-                    //{
-
-                    //}
-                    //else // 적의 공격일시
-                    //{
-                    //    if (sliceMap[enemy.currentY, enemy.currentX - 1] == sliceMap[player.currentY, player.currentX]) // 공격판정
-                    //        isDamage = true;
-                    //}
-
-                    //if (sliceMap[player.currentY, player.currentX] == sliceMap[enemy.currentY, enemy.currentX])
-                    //{
-                    //    Debug.Log("겹쳤다");
-                    //    isDamage = true;
-                    //}
-
-
-                    //if (isDamage)
-                    //{
-                    //    Debug.Log("피까임");
-                    //    if (isplayer)
-                    //    {
-                    //        enemy.hp -= 30;
-                    //    }
-                    //    else
-                    //    {
-                    //        player.hp -= 30;
-                    //        sliceMap[enemy.currentY, enemy.currentX].SetColor(Color.white);
-                    //        sliceMap[enemy.currentY, enemy.currentX - 1].SetColor(Color.white);
-                    //    }
-                    //}
-
-
-
-                    // TileClear();
-
-
-                
-
-            case (int)Behavior.Pike:
-
-                if (isplayer) // 플레이어 공격일시
-                {
-                    player.mp -= 40;
-
-                    GameObject attackEffect = Instantiate(attack2Prefab, player.attack2Trm.position, Quaternion.identity); // 공격이펙트
-                    Destroy(attackEffect, attackDelayTime);
-                    StartCoroutine(AttackDecision(true, 2, (0, 0), (0, 1), (1,1),(1,0),(0,-1),(1,-1))); // player = true, 현재위치로부터 0,0과 1,0을 공격
-                }
-                else // 적의 공격일시
-                {
-                    enemy.mp -= 20;
-
-                    GameObject attackEffect = Instantiate(attack2Prefab, enemy.attack2Trm.position, Quaternion.identity); // 공격이펙트
-                    Destroy(attackEffect, attackDelayTime);
-                    StartCoroutine(AttackDecision(false, 2, (0, 0), (0,1), (-1,1),(-1,0),(0,-1),(-1,-1))); // player = true, 현재위치로부터 0,0과 1,0을 공격
-                }
-                CheckHPMP();
-                break;
-
-            case (int)Behavior.Shield:
-                Debug.Log("실드 미구현");
-                break;
-            default:
-                Debug.Log("공격스킬이 아닌거같은데");
-                break;
+            player.mp -= data.cost; // 플레이어 마나소모
+            position = player.transform.position + data.position; // 위치조절
         }
+        else // 적일 시
+        {
+            enemy.mp -= data.cost;
+            position = enemy.transform.position - data.position;
+        }
+
+
+        
+        StartCoroutine(AttackDecision(isplayer, data.damage, data.attackPoints, position, data.prefab, data.isBuff));
         
     }
 
@@ -341,256 +325,148 @@ public class MoveMap : MonoBehaviour
             for(int j=0; j<4; j++)
             {
                 sliceMap[i, j].SetColor(Color.white);
+                //if((i+1)%2 == (j+1)%2)
+                //{
+                //    sliceMap[i, j].SetColor(Color.white);
+                //}
+                //else
+                //{
+                //    sliceMap[i, j].SetColor(Color.black);
+                //}
             }
         }
     }
 
-    public IEnumerator AttackDecision(bool isPlayer, int attackType, (int x, int y)? targetXY1 = null, (int x, int y)? targetXY2 = null, (int x, int y)? targetXY3 = null, (int x, int y)? targetXY4 = null,
-        (int x, int y)? targetXY5 = null, (int x, int y)? targetXY6 = null, (int x, int y)? targetXY7 = null, (int x, int y)? targetXY8 = null, (int x, int y)? targetXY9 = null)
+    public IEnumerator AttackDecision(bool isPlayer, int attackDamage, List<Vector2> attackPoints, Vector2 attackEffectPosition, GameObject attackPrefab, bool buff)
     {
-        Debug.Log("이거 y:" + targetXY1.Value.y + ", x:" + targetXY1.Value.x);
-        Debug.Log(targetXY1.HasValue);
         // 공격타일 색깔변화 Red
-        if(isPlayer)
+
+        bool isDamage = false; // 공격판정 성공시 true로 변함
+        bool isBuff = buff; // 일반공격이 아닌 회복, 보호막 등의 판정시 true로 변함
+
+        foreach (Vector2 v in attackPoints)
         {
-            if(targetXY1 != null)
+                Vector2 attackInVector = v;
+            if (!isPlayer) // 적이면
             {
-                sliceMap[player.currentY + targetXY1.Value.y, player.currentX + targetXY1.Value.x].SetColor(Color.red);
+                attackInVector.x *= -1;
+                attackInVector += new Vector2(enemy.currentX, enemy.currentY);
             }
-            if (targetXY2 != null)
+            else // 플레이어면
             {
-                sliceMap[player.currentY + targetXY2.Value.y, player.currentX + targetXY2.Value.x].SetColor(Color.red);
-            }
-            if (targetXY3 != null)
-            {
-                sliceMap[player.currentY + targetXY3.Value.y, player.currentX + targetXY3.Value.x].SetColor(Color.red);
-            }
-            if (targetXY4 != null)
-            {
-                sliceMap[player.currentY + targetXY4.Value.y, player.currentX + targetXY4.Value.x].SetColor(Color.red);
-            }
-            if (targetXY5 != null)
-            {
-                sliceMap[player.currentY + targetXY5.Value.y, player.currentX + targetXY5.Value.x].SetColor(Color.red);
-            }
-            if (targetXY6 != null)
-            {
-                sliceMap[player.currentY + targetXY6.Value.y, player.currentX + targetXY6.Value.x].SetColor(Color.red);
-            }
-            if (targetXY7 != null)
-            {
-                sliceMap[player.currentY + targetXY7.Value.y, player.currentX + targetXY7.Value.x].SetColor(Color.red);
-            }
-            if (targetXY8 != null)
-            {
-                sliceMap[player.currentY + targetXY8.Value.y, player.currentX + targetXY8.Value.x].SetColor(Color.red);
-            }
-            if (targetXY9 != null)
-            {
-                sliceMap[player.currentY + targetXY9.Value.y, player.currentX + targetXY9.Value.x].SetColor(Color.red);
+                attackInVector += new Vector2(player.currentX, player.currentY);
             }
 
+
+            if (attackInVector.x <= 3 && attackInVector.x >= 0 && attackInVector.y <= 2 && attackInVector.y >= 0) // x 0~3 , y 0~2
+            {
+                if (isBuff)
+                {
+                    if (isPlayer)
+                    {
+                        player.armor += 15;
+                    }
+                    else
+                    {
+                        enemy.armor += 15; // 임시
+                    }
+                    sliceMap[(int)attackInVector.y, (int)attackInVector.x].SetColor(Color.yellow); // 색깔변화 힐/보호막
+                }
+                else
+                {
+                    
+
+                    if ((sliceMap[(int)attackInVector.y, (int)attackInVector.x] == sliceMap[enemy.currentY, enemy.currentX] && isPlayer) || // 플레이어 공격판정
+                     (sliceMap[(int)attackInVector.y, (int)attackInVector.x] == sliceMap[player.currentY, player.currentX] && !isPlayer))// 적 공격판정
+                    {
+                        sliceMap[(int)attackInVector.y, (int)attackInVector.x].SetColor(Color.red); // 색깔변화
+                        isDamage = true;
+                    }
+                    else
+                    {
+                        sliceMap[(int)attackInVector.y, (int)attackInVector.x].SetColor(Color.green); // 색깔변화(안맞음)
+                    }
+                }
+
+                
+            }
+
+                //v가 공격범위 벗어났는지 체크하고
+                // 해당 위치 붉게 변하게하고
         }
-        else
-        {
-            if (targetXY1 != null)
-            {
-                sliceMap[enemy.currentY + targetXY1.Value.y, enemy.currentX + targetXY1.Value.x].SetColor(Color.red);
-            }
-            if (targetXY2 != null)
-            {
-                sliceMap[enemy.currentY + targetXY2.Value.y, enemy.currentX + targetXY2.Value.x].SetColor(Color.red);
-            }
-            if (targetXY3 != null)
-            {
-                sliceMap[enemy.currentY + targetXY3.Value.y, enemy.currentX + targetXY3.Value.x].SetColor(Color.red);
-            }
-            if (targetXY4 != null)
-            {
-                sliceMap[enemy.currentY + targetXY4.Value.y, enemy.currentX + targetXY4.Value.x].SetColor(Color.red);
-            }
-            if (targetXY5 != null)
-            {
-                sliceMap[enemy.currentY + targetXY5.Value.y, enemy.currentX + targetXY5.Value.x].SetColor(Color.red);
-            }
-            if (targetXY6 != null)
-            {
-                sliceMap[enemy.currentY + targetXY6.Value.y, enemy.currentX + targetXY6.Value.x].SetColor(Color.red);
-            }
-            if (targetXY7 != null)
-            {
-                sliceMap[enemy.currentY + targetXY7.Value.y, enemy.currentX + targetXY7.Value.x].SetColor(Color.red);
-            }
-            if (targetXY8 != null)
-            {
-                sliceMap[enemy.currentY + targetXY8.Value.y, enemy.currentX + targetXY8.Value.x].SetColor(Color.red);
-            }
-            if (targetXY9 != null)
-            {
-                sliceMap[enemy.currentY + targetXY9.Value.y, enemy.currentX + targetXY9.Value.x].SetColor(Color.red);
-            }
-        }
+        
 
         yield return new WaitForSeconds(attackDelayTime); // 공격타임 딜레이의시간 (이후 색깔원상복귀 및 공격판정확인)
 
-        // 공격타일 색깔변화 White
+        GameObject attackEffect = Instantiate(attackPrefab, attackEffectPosition, Quaternion.identity); // 공격이펙트생성
+        Destroy(attackEffect, attackDelayTime);
 
-        bool isDamage = false; // 공격판정 성공시 true로 변함
+        Sequence seq = DOTween.Sequence();
 
-        if (isPlayer)
+        attackEffect.GetComponent<SpriteRenderer>().color = new Color(1f, 1f, 1f, 0);
+        seq.Append(attackEffect.GetComponent<SpriteRenderer>().DOFade(1f, 0.4f));
+        if (!isPlayer) // 적이면 이펙트 회전
         {
-            if (targetXY1 != null)
-            {
-                if (sliceMap[player.currentY + targetXY1.Value.y, player.currentX + targetXY1.Value.x] == sliceMap[enemy.currentY, enemy.currentX]) // 공격판정
-                    isDamage = true;
-
-                sliceMap[player.currentY + targetXY1.Value.y, player.currentX + targetXY1.Value.x].SetColor(Color.white);
-            }
-            if (targetXY2 != null)
-            {
-                if (sliceMap[player.currentY + targetXY2.Value.y, player.currentX + targetXY2.Value.x] == sliceMap[enemy.currentY, enemy.currentX]) // 공격판정
-                    isDamage = true;
-
-                sliceMap[player.currentY + targetXY2.Value.y, player.currentX + targetXY2.Value.x].SetColor(Color.white);
-            }
-            if (targetXY3 != null)
-            {
-                if (sliceMap[player.currentY + targetXY3.Value.y, player.currentX + targetXY3.Value.x] == sliceMap[enemy.currentY, enemy.currentX]) // 공격판정
-                    isDamage = true;
-
-                sliceMap[player.currentY + targetXY3.Value.y, player.currentX + targetXY3.Value.x].SetColor(Color.white);
-            }
-            if (targetXY4 != null)
-            {
-                if (sliceMap[player.currentY + targetXY4.Value.y, player.currentX + targetXY4.Value.x] == sliceMap[enemy.currentY, enemy.currentX]) // 공격판정
-                    isDamage = true;
-
-                sliceMap[player.currentY + targetXY4.Value.y, player.currentX + targetXY4.Value.x].SetColor(Color.white);
-            }
-            if (targetXY5 != null)
-            {
-                if (sliceMap[player.currentY + targetXY5.Value.y, player.currentX + targetXY5.Value.x] == sliceMap[enemy.currentY, enemy.currentX]) // 공격판정
-                    isDamage = true;
-
-                sliceMap[player.currentY + targetXY5.Value.y, player.currentX + targetXY5.Value.x].SetColor(Color.white);
-            }
-            if (targetXY6 != null)
-            {
-                if (sliceMap[player.currentY + targetXY6.Value.y, player.currentX + targetXY6.Value.x] == sliceMap[enemy.currentY, enemy.currentX]) // 공격판정
-                    isDamage = true;
-
-                sliceMap[player.currentY + targetXY6.Value.y, player.currentX + targetXY6.Value.x].SetColor(Color.white);
-            }
-            if (targetXY7 != null)
-            {
-                if (sliceMap[player.currentY + targetXY7.Value.y, player.currentX + targetXY7.Value.x] == sliceMap[enemy.currentY, enemy.currentX]) // 공격판정
-                    isDamage = true;
-
-                sliceMap[player.currentY + targetXY7.Value.y, player.currentX + targetXY7.Value.x].SetColor(Color.white);
-            }
-            if (targetXY8 != null)
-            {
-                if (sliceMap[player.currentY + targetXY8.Value.y, player.currentX + targetXY8.Value.x] == sliceMap[enemy.currentY, enemy.currentX]) // 공격판정
-                    isDamage = true;
-
-                sliceMap[player.currentY + targetXY8.Value.y, player.currentX + targetXY8.Value.x].SetColor(Color.white);
-            }
-            if (targetXY9 != null)
-            {
-                if (sliceMap[player.currentY + targetXY9.Value.y, player.currentX + targetXY9.Value.x] == sliceMap[enemy.currentY, enemy.currentX]) // 공격판정
-                    isDamage = true;
-
-                sliceMap[player.currentY + targetXY9.Value.y, player.currentX + targetXY9.Value.x].SetColor(Color.white);
-            }
-
+            attackEffect.GetComponent<SpriteRenderer>().flipX = true;
         }
-        else
-        {
-            if (targetXY1 != null)
-            {
-                if (sliceMap[enemy.currentY + targetXY1.Value.y, enemy.currentX + targetXY1.Value.x] == sliceMap[player.currentY, player.currentX]) // 공격판정
-                    isDamage = true;
+        
+        
 
-                sliceMap[enemy.currentY + targetXY1.Value.y, enemy.currentX + targetXY1.Value.x].SetColor(Color.white);
-            }
-            if (targetXY2 != null)
-            {
-                if (sliceMap[enemy.currentY + targetXY2.Value.y, enemy.currentX + targetXY2.Value.x] == sliceMap[player.currentY, player.currentX]) // 공격판정
-                    isDamage = true;
-
-                sliceMap[enemy.currentY + targetXY2.Value.y, enemy.currentX + targetXY2.Value.x].SetColor(Color.white);
-            }
-            if (targetXY3 != null)
-            {
-                if (sliceMap[enemy.currentY + targetXY3.Value.y, enemy.currentX + targetXY3.Value.x] == sliceMap[player.currentY, player.currentX]) // 공격판정
-                    isDamage = true;
-
-                sliceMap[enemy.currentY + targetXY3.Value.y, enemy.currentX + targetXY3.Value.x].SetColor(Color.white);
-            }
-            if (targetXY4 != null)
-            {
-                if (sliceMap[enemy.currentY + targetXY4.Value.y, enemy.currentX + targetXY4.Value.x] == sliceMap[player.currentY, player.currentX]) // 공격판정
-                    isDamage = true;
-
-                sliceMap[enemy.currentY + targetXY4.Value.y, enemy.currentX + targetXY4.Value.x].SetColor(Color.white);
-            }
-            if (targetXY5 != null)
-            {
-                if (sliceMap[enemy.currentY + targetXY5.Value.y, enemy.currentX + targetXY5.Value.x] == sliceMap[player.currentY, player.currentX]) // 공격판정
-                    isDamage = true;
-
-                sliceMap[enemy.currentY + targetXY5.Value.y, enemy.currentX + targetXY5.Value.x].SetColor(Color.white);
-            }
-            if (targetXY6 != null)
-            {
-                if (sliceMap[enemy.currentY + targetXY6.Value.y, enemy.currentX + targetXY6.Value.x] == sliceMap[player.currentY, player.currentX]) // 공격판정
-                    isDamage = true;
-
-                sliceMap[enemy.currentY + targetXY6.Value.y, enemy.currentX + targetXY6.Value.x].SetColor(Color.white);
-            }
-            if (targetXY7 != null)
-            {
-                if (sliceMap[enemy.currentY + targetXY7.Value.y, enemy.currentX + targetXY7.Value.x] == sliceMap[player.currentY, player.currentX]) // 공격판정
-                    isDamage = true;
-
-                sliceMap[enemy.currentY + targetXY7.Value.y, enemy.currentX + targetXY7.Value.x].SetColor(Color.white);
-            }
-            if (targetXY8 != null)
-            {
-                if (sliceMap[enemy.currentY + targetXY8.Value.y, enemy.currentX + targetXY8.Value.x] == sliceMap[player.currentY, player.currentX]) // 공격판정
-                    isDamage = true;
-
-                sliceMap[enemy.currentY + targetXY8.Value.y, enemy.currentX + targetXY8.Value.x].SetColor(Color.white);
-            }
-            if (targetXY9 != null)
-            {
-                if (sliceMap[enemy.currentY + targetXY9.Value.y, enemy.currentX + targetXY9.Value.x] == sliceMap[player.currentY, player.currentX]) // 공격판정
-                    isDamage = true;
-
-                sliceMap[enemy.currentY + targetXY9.Value.y, enemy.currentX + targetXY9.Value.x].SetColor(Color.white);
-            }
-        }
-
-        // 판정이 맞아떨어지면
         if (isDamage)
         {
+            float shakePower = 0.5f;
             Debug.Log("피까임");
+            
             if (isPlayer)
             {
-                if(attackType == 1)
-                enemy.hp -= 50;
-                else if (attackType == 2)
-                    enemy.hp -= 20;
+                if(enemy.armor != 0)
+                {
+                    Debug.Log($"적 방어도 {enemy.armor}, 공격데미지 {attackDamage}");
+                    sliceMap[enemy.currentY, enemy.currentX].SetColor(Color.cyan);
+                    shakePower = 0.1f;
+                    Mathf.Clamp(enemy.armor, 0, attackDamage);
+
+                    seq.Append(enemy.gameObject.GetComponent<SpriteRenderer>().DOColor(Color.red, 0.7f));
+                    seq.Append(enemy.gameObject.GetComponent<SpriteRenderer>().DOColor(Color.white, 0.3f));
+                }
+                else
+                {
+                    seq.Append(enemy.gameObject.GetComponent<SpriteRenderer>().DOColor(Color.red, 0.7f));
+                    seq.Append(enemy.gameObject.GetComponent<SpriteRenderer>().DOColor(Color.white, 0.3f));
+                }
+                
+                enemy.hp -= attackDamage - enemy.armor; // 데미지에서 방어도 뺀값
+                
             }
             else
             {
-                if (attackType == 1)
-                    player.hp -= 50;
-                else if (attackType == 2)
-                    player.hp -= 20;
+                if(player.armor != 0)
+                {
+                    Debug.Log($"플레이어 방어도 {player.armor}, 공격데미지 {attackDamage}");
+                    sliceMap[player.currentY, player.currentX].SetColor(Color.cyan);
+                    shakePower = 0.1f;
+                    Mathf.Clamp(player.armor, 0, attackDamage);
+
+                    seq.Append(player.gameObject.GetComponent<SpriteRenderer>().DOColor(Color.cyan, 0.7f));
+                    seq.Append(player.gameObject.GetComponent<SpriteRenderer>().DOColor(Color.white, 0.3f));
+                }
+                else
+                {
+                    seq.Append(player.gameObject.GetComponent<SpriteRenderer>().DOColor(Color.cyan, 0.7f));
+                    seq.Append(player.gameObject.GetComponent<SpriteRenderer>().DOColor(Color.white, 0.3f));
+                }
+                
+                
+                player.hp -= attackDamage - player.armor; // 데미지에서 방어도 뺀값
+                
             }
+
+            Camera.main.DOShakePosition(2f, shakePower); // 공격받아서 화면흔들림
         }
+
+        
         CheckHPMP();
+        TileClear(); // 공격타일 색깔변화 White
     }
 }
 

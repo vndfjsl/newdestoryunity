@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using DG.Tweening;
 
 public class Enemy : MonoBehaviour
 {
@@ -8,37 +9,14 @@ public class Enemy : MonoBehaviour
     public int currentY = 1;
     public int hp = 100;
     public int mp = 100;
+    public int armor = 0;
 
     public List<int> nextBehavior = new List<int>();
     public int behaviorIndex = 0;
 
-    public Transform attack1Trm;
-    public Transform attack2Trm;
-
-    //public int[] enemyAttackCollisions; // 플레이어 공격스킬범위. 123456789 순서대로
-    /*
-     * 123
-     * 456
-     * 789
-     * 0b 010 111 010 = 십자가
-     * = 010
-     *   111
-     *   010
-     * 
-     */
-
     public void Start()
     {
-        SetAttackCollision();
-        EnemySetBehavior();
-    }
-
-    public void SetAttackCollision()
-    {
-        //enemyAttackCollisions[0] = 0b000011000; // 000 011 000, 정면공격
-        //enemyAttackCollisions[1] = 0b010010000; // 010 010 000, 위공격
-        //enemyAttackCollisions[2] = 0b000010111; // 000 010 111, 아래모두
-        //enemyAttackCollisions[3] = 0b110110110; // 110 110 110, 전방휩쓸기
+        EnemySetBehavior(); // 적 다음공격 설정(AI 삽입 필요.)
     }
 
     public void Move()
@@ -71,17 +49,18 @@ public class Enemy : MonoBehaviour
                 break;
             case (int)Behavior.KnifeAttack:
                 Debug.Log("Enemy Attack! Knife");
-                MoveMap.Instance.ShowAttackCollision((int)Behavior.KnifeAttack, false);
+                StartCoroutine(MoveMap.Instance.ShowAttackCollision(Behavior.KnifeAttack, false));
                 break;
             case (int)Behavior.Pike:
                 Debug.Log("Enemy Attack! Pike");
-                MoveMap.Instance.ShowAttackCollision((int)Behavior.Pike, false);
+                StartCoroutine(MoveMap.Instance.ShowAttackCollision(Behavior.Pike, false));
                 break;
             case (int)Behavior.Shield:
-                Debug.Log("Enemy Attack! Shield");
-                MoveMap.Instance.ShowAttackCollision((int)Behavior.Shield, false);
+                Debug.Log("Enemy Shield!");
+                StartCoroutine(MoveMap.Instance.ShowAttackCollision(Behavior.Shield, false));
                 break;
         }
+        transform.DOMove(MoveMap.Instance.sliceMap[currentY, currentX].transform.position, 1f);
         behaviorIndex = (behaviorIndex + 1) % 3;
     }
 
@@ -91,34 +70,17 @@ public class Enemy : MonoBehaviour
 
         for (int i=0; i<3; i++)
         {
-            int behaviorType = Random.Range(0, 5); // 0~4
-            switch(behaviorType)
-            {
-                case 0:
-                    nextBehavior.Add((int)Behavior.UP);
-                    break;
+            int behaviorType = Random.Range(0, 7);
+            if (currentY <= 0 && behaviorType == (int)Behavior.UP) // 위쪽끝이면
+                behaviorType = (int)Behavior.DOWN;
+            else if (currentY >= 2 && behaviorType == (int)Behavior.DOWN)
+                behaviorType = (int)Behavior.UP;
+            if (currentX <= 0 && behaviorType == (int)Behavior.LEFT) // 위쪽끝이면
+                behaviorType = (int)Behavior.RIGHT;
+            else if (currentX >= 3 && behaviorType == (int)Behavior.RIGHT)
+                behaviorType = (int)Behavior.LEFT;
 
-                case 1:
-                    nextBehavior.Add((int)Behavior.LEFT);
-                    break;
-
-                case 2:
-                    nextBehavior.Add((int)Behavior.DOWN);
-                    break;
-
-                case 3:
-                    nextBehavior.Add((int)Behavior.RIGHT);
-                    break;
-                case 4:
-                    nextBehavior.Add((int)Behavior.KnifeAttack);
-                    break;
-                case (int)Behavior.Pike:
-                    nextBehavior.Add((int)Behavior.Pike);
-                    break;
-                case (int)Behavior.Shield:
-                    nextBehavior.Add((int)Behavior.Shield);
-                    break;
-            }
+            nextBehavior.Add(behaviorType);
         }
     }
 }
