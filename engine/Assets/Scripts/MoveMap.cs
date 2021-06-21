@@ -74,6 +74,7 @@ public class MoveMap : MonoBehaviour
     public GameObject tutorialUI;
     public GameObject[] behaviorButtons;
     public GameObject onBehaviorButton;
+    public Text onBehaviorText;
     public GameObject behaviorSetting;
     public Behavior nextBehavior;
     public Button nextBehaviorButton; // 행동 다정한후누르는거. 임시로받아옴
@@ -161,6 +162,7 @@ public class MoveMap : MonoBehaviour
     {
         for (int i = 0; i < behaviorButtons.Length; i++)
         {
+            Debug.Log(i);
             behaviorButtons[i].GetComponent<BehaviorButton>().buttonIndex = i;
         }
     }
@@ -212,6 +214,11 @@ public class MoveMap : MonoBehaviour
 
     public void NextTurn()
     {
+        Debug.Log("열");
+        player.mp += 30;
+        enemy.mp += 30;
+        onBehaviorButton.GetComponent<Image>().DOFade(1f,0.5f); // 다시입력
+        onBehaviorText.gameObject.SetActive(true);
         turn++; // 1턴추가요
         player.InitBehavior(); // 행동넣은거 초기화
         enemy.EnemySetBehavior(); // 적 행동 다시설정
@@ -229,13 +236,14 @@ public class MoveMap : MonoBehaviour
     public void LoadPanel() // 행동버튼누르는패널 보이게
     {
         behaviorSetting.SetActive(true);
-        onBehaviorButton.SetActive(false);
+        // onBehaviorButton.GetComponent<Image>().DOFade(0f, 0.5f); // 추가입력방지
+        onBehaviorButton.GetComponent<Image>().DOFade(0f, 0.5f);
+        onBehaviorText.gameObject.SetActive(false);
     }
 
     public void HidePanel() // 행동버튼누르는패널 안보이게
     {
         behaviorSetting.SetActive(false);
-        onBehaviorButton.SetActive(true);
     }
 
     public void PressKey(int buttonIndex)
@@ -281,16 +289,19 @@ public class MoveMap : MonoBehaviour
         {
             Debug.Log("Draw!");
             drawPanel.SetActive(true);
+            drawPanel.GetComponent<Image>().DOFade(1f, 0.5f);
         }
         else if (player.hp <= 0) // 피 0인지 체크
         {
             Debug.Log("Enemy is Win!");
             enemyWinPanel.SetActive(true);
+            enemyWinPanel.GetComponent<Image>().DOFade(1f, 0.5f);
         }
         else if (enemy.hp <= 0)
         {
             Debug.Log("Player is Win!");
             playerWinPanel.SetActive(true);
+            playerWinPanel.GetComponent<Image>().DOFade(1f, 0.5f);
         }
     }
 
@@ -324,7 +335,8 @@ public class MoveMap : MonoBehaviour
         {
             for(int j=0; j<4; j++)
             {
-                sliceMap[i, j].SetColor(Color.white);
+                // sliceMap[i, j].SetColor(Color.white);
+                sliceMap[i, j].SetColor(Color.black);
                 //if((i+1)%2 == (j+1)%2)
                 //{
                 //    sliceMap[i, j].SetColor(Color.white);
