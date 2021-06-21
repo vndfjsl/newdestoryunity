@@ -16,7 +16,7 @@ public class Enemy : MonoBehaviour
 
     public void Start()
     {
-        EnemySetBehavior(); // 적 다음공격 설정(AI 삽입 필요.)
+        // EnemySetBehavior(); // 적 다음공격 설정(AI 삽입 필요.)
     }
 
     public void Move()
@@ -66,21 +66,59 @@ public class Enemy : MonoBehaviour
 
     public void EnemySetBehavior()
     {
-        nextBehavior.Clear();
+        // nextBehavior.Clear();
 
-        for (int i=0; i<3; i++)
-        {
-            int behaviorType = Random.Range(0, 7);
-            if (currentY <= 0 && behaviorType == (int)Behavior.UP) // 위쪽끝이면
-                behaviorType = (int)Behavior.DOWN;
-            else if (currentY >= 2 && behaviorType == (int)Behavior.DOWN)
-                behaviorType = (int)Behavior.UP;
-            if (currentX <= 0 && behaviorType == (int)Behavior.LEFT) // 위쪽끝이면
-                behaviorType = (int)Behavior.RIGHT;
-            else if (currentX >= 3 && behaviorType == (int)Behavior.RIGHT)
-                behaviorType = (int)Behavior.LEFT;
+        //for (int i=0; i<3; i++)
+        //{
+            List<int> bhArr = new List<int>() { 0, 1, 2, 3, 4, 5, 6 };
+            if (currentY <= 0)
+            {
+                bhArr.Remove((int)Behavior.UP);
+            }
+            else if (currentY >= 2)
+            {
+                bhArr.Remove((int)Behavior.DOWN);
+            }
 
-            nextBehavior.Add(behaviorType);
-        }
+            if (currentX <= 0)
+            {
+                bhArr.Remove((int)Behavior.LEFT);
+            }
+            else if (currentX >= 3)
+            {
+                bhArr.Remove((int)Behavior.RIGHT);
+            }
+
+            if (mp < 10)
+            {
+                bhArr.Remove((int)Behavior.KnifeAttack);
+            }
+            if (mp < 30)
+            {
+                bhArr.Remove((int)Behavior.Pike);
+            }
+
+            int randBhIndex = Random.Range(0, bhArr.Count);
+            nextBehavior.Add(bhArr[randBhIndex]);
+
+
+                /*
+                int behaviorType = Random.Range(0, 7);
+                if(mp <= 0)
+                {
+
+                }
+
+                if (currentY <= 0 && behaviorType == (int)Behavior.UP) // 위쪽끝이면
+                    behaviorType = (int)Behavior.DOWN;
+                else if (currentY >= 2 && behaviorType == (int)Behavior.DOWN)
+                    behaviorType = (int)Behavior.UP;
+                if (currentX <= 0 && behaviorType == (int)Behavior.LEFT) // 위쪽끝이면
+                    behaviorType = (int)Behavior.RIGHT;
+                else if (currentX >= 3 && behaviorType == (int)Behavior.RIGHT)
+                    behaviorType = (int)Behavior.LEFT;
+                */
+                //nextBehavior.Add(behaviorType);
+        
     }
 }

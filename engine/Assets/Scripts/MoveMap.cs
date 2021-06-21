@@ -190,7 +190,9 @@ public class MoveMap : MonoBehaviour
         for (int i=0; i<3; i++)
         {
             player.Move();
+            enemy.EnemySetBehavior();
             enemy.Move();
+            
             enemyGameKeyInput[i].sprite = keySprite[enemy.nextBehavior[i]];
             // 적 행동 보여주기
 
@@ -221,7 +223,9 @@ public class MoveMap : MonoBehaviour
         onBehaviorText.gameObject.SetActive(true);
         turn++; // 1턴추가요
         player.InitBehavior(); // 행동넣은거 초기화
-        enemy.EnemySetBehavior(); // 적 행동 다시설정
+        enemy.nextBehavior.Clear(); // 적의 행동리스트 초기화
+
+        // enemy.EnemySetBehavior(); // 적 행동 다시설정
         InitShowEnemyBehavior();
 
         keyInputCount = 0; // 행동입력한횟수 초기화
