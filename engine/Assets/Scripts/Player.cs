@@ -14,6 +14,8 @@ public class Player : MonoBehaviour
     public List<int> nextBehavior = new List<int>();
     public int behaviorIndex = 0;
 
+    
+
     //public int[] playerAttackCollisions; // 플레이어 공격스킬범위. 123456789 순서대로
     /*
      * 123
@@ -81,7 +83,7 @@ public class Player : MonoBehaviour
                 break;
         }
         // transform.position = MoveMap.Instance.sliceMap[currentY, currentX].transform.position;
-        transform.DOMove(MoveMap.Instance.sliceMap[currentY, currentX].transform.position, 1f);
+        transform.DOMove(MoveMap.Instance.sliceMap[currentY, currentX].transform.position - new Vector3(0.5f,0,0), 1f);
         behaviorIndex = (behaviorIndex + 1) % 3;
         // hp -= 20;
     }

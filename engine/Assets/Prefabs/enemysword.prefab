@@ -97,7 +97,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   currentX: 3
   currentY: 1
-  hp: 100
+  hp: 150
   mp: 100
   armor: 0
   nextBehavior: 

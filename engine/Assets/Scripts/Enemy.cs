@@ -7,7 +7,7 @@ public class Enemy : MonoBehaviour
 {
     public int currentX = 3;
     public int currentY = 1;
-    public int hp = 100;
+    public int hp = 150;
     public int mp = 100;
     public int armor = 0;
 
@@ -60,7 +60,7 @@ public class Enemy : MonoBehaviour
                 StartCoroutine(MoveMap.Instance.ShowAttackCollision(Behavior.Shield, false));
                 break;
         }
-        transform.DOMove(MoveMap.Instance.sliceMap[currentY, currentX].transform.position, 1f);
+        transform.DOMove(MoveMap.Instance.sliceMap[currentY, currentX].transform.position + new Vector3(0.5f, 0, 0), 1f);
         behaviorIndex = (behaviorIndex + 1) % 3;
     }
 

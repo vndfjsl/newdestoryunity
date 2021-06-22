@@ -10,8 +10,9 @@ public class SkillDataVO
     public List<Vector2> attackPoints;
     public Vector3 position;
     public bool isBuff; // Not Attack
+    public string soundName;
 
-    public SkillDataVO(GameObject prefab, int cost, int damage, List<Vector2> attackPoints, Vector3 position, bool isBuff)
+    public SkillDataVO(GameObject prefab, int cost, int damage, List<Vector2> attackPoints, Vector3 position, bool isBuff, string sound)
     {
         this.prefab = prefab;
         this.cost = cost;
@@ -19,5 +20,6 @@ public class SkillDataVO
         this.attackPoints = attackPoints;
         this.position = position;
         this.isBuff = isBuff;
+        this.soundName = sound;
     }
 }

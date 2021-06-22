@@ -105,12 +105,25 @@ public class MoveMap : MonoBehaviour
     public GameObject attack2Prefab; // 파이크
     public GameObject attack3Prefab; // 방패
 
+    
+    private AudioSource audioSource;
+    [Header("소 리")]
+    public AudioClip swordSound;
+    public AudioClip spearSound;
+    public AudioClip shieldSound;
+
+    [Header("색")]
+    public Color32 tileColor;
+
+
     private Dictionary<Behavior, SkillDataVO> typeData = new Dictionary<Behavior, SkillDataVO>();
 
     void Start()
     {
+        audioSource = GetComponent<AudioSource>();
+
         //타입별 마나코스트 책정
-        SkillDataVO attackData1 = new SkillDataVO(attack1Prefab, 10, 50, new List<Vector2>() { new Vector2(0,0), new Vector2(1,0)}, new Vector3(0.5f, 0, 0), false);
+        SkillDataVO attackData1 = new SkillDataVO(attack1Prefab, 20, 40, new List<Vector2>() { new Vector2(0,0), new Vector2(1,0), new Vector3(0,1), new Vector3(0,-1)}, new Vector3(0.5f, 0, 0), false, "sword");
         typeData.Add(Behavior.KnifeAttack, attackData1);
         SkillDataVO attackData2 = new SkillDataVO(attack2Prefab, 30, 25, new List<Vector2>() { 
             new Vector2(0, 0), 
@@ -118,9 +131,9 @@ public class MoveMap : MonoBehaviour
             new Vector2(1, 1), 
             new Vector2(1, 0), 
             new Vector2(0, -1), 
-            new Vector2(1, -1) }, new Vector3(0.5f, 0, 0), false);
+            new Vector2(1, -1) }, new Vector3(0.5f, 0, 0), false, "spear");
         typeData.Add(Behavior.Pike, attackData2);
-        SkillDataVO buffData1 = new SkillDataVO(attack3Prefab, -20, 0, new List<Vector2>() { new Vector2(0, 0) }, new Vector3(0.5f,0,0), true); // 방 어
+        SkillDataVO buffData1 = new SkillDataVO(attack3Prefab, -20, 0, new List<Vector2>() { new Vector2(0, 0) }, new Vector3(0.5f,0,0), true, "shield"); // 방 어
         typeData.Add(Behavior.Shield, buffData1);
         
 
@@ -154,8 +167,8 @@ public class MoveMap : MonoBehaviour
 
     public void PlayerSpawn()
     {
-        player = Instantiate(playerPrefab, sliceMap[1, 0].transform.position, Quaternion.identity).GetComponent<Player>();
-        enemy = Instantiate(enemyPrefab, sliceMap[1, 3].transform.position, Quaternion.identity).GetComponent<Enemy>();
+        player = Instantiate(playerPrefab, sliceMap[1, 0].transform.position - new Vector3(0.5f,0f), Quaternion.identity).GetComponent<Player>();
+        enemy = Instantiate(enemyPrefab, sliceMap[1, 3].transform.position + new Vector3(0.5f, 0f), Quaternion.identity).GetComponent<Enemy>();
     }
 
     public void InitButtonIndex()
@@ -167,7 +180,26 @@ public class MoveMap : MonoBehaviour
         }
     }
 
+    public void PlaySound(string idle)
+    {
+        switch(idle)
+        {
+            case "sword":
+                audioSource.clip = swordSound;
+                break;
+            case "spear":
+                audioSource.clip = spearSound;
+                break;
+            case "shield":
+                audioSource.clip = shieldSound;
+                break;
+        }
 
+        if(!audioSource.isPlaying)
+        {
+            audioSource.Play();
+        }
+    }
 
     public void TempStartNextBehavior()
     {
@@ -176,7 +208,8 @@ public class MoveMap : MonoBehaviour
 
     public IEnumerator NextBehavior()
     {
-        HidePanel(); // 행동선택완료니까 패널은끄고
+        behaviorSetting.SetActive(false);
+        // HidePanel(); // 행동선택완료니까 패널은끄고
         yield return new WaitForSeconds(0.5f); // 패널끄는동안 대기시간
 
         if (keyInputCount < 3)
@@ -198,12 +231,13 @@ public class MoveMap : MonoBehaviour
 
 
             // Debug.Log($"X: {player.currentX}, Y: {player.currentY}");
-
+            
             yield return new WaitForSeconds(2f);
-
+            CheckHPMP();
             player.armor = 0;
             enemy.armor = 0; // 턴끝나서 방어도 초기화
 
+            
             behaviorSequence++;
         }
         
@@ -247,6 +281,8 @@ public class MoveMap : MonoBehaviour
 
     public void HidePanel() // 행동버튼누르는패널 안보이게
     {
+        onBehaviorButton.GetComponent<Image>().DOFade(1f, 0.5f); // 다시입력
+        onBehaviorText.gameObject.SetActive(true);
         behaviorSetting.SetActive(false);
     }
 
@@ -274,20 +310,6 @@ public class MoveMap : MonoBehaviour
 
     public void CheckHPMP()
     {
-        Debug.Log("체력체크");
-        playerHPText.text = $"{player.hp} / 100"; // UI 업데이트
-        playerHPGauge.fillAmount = player.hp / 100f;
-
-        playerMPText.text = $"{player.mp} / 100"; // UI 업데이트
-        playerMPGauge.fillAmount = player.mp / 100f;
-
-        enemyHPText.text = $"{enemy.hp} / 100";
-        enemyHPGauge.fillAmount = enemy.hp / 100f;
-
-        enemyMPText.text = $"{enemy.mp} / 100";
-        enemyMPGauge.fillAmount = enemy.mp / 100f;
-
-
 
         if (player.hp <= 0 && enemy.hp <= 0)
         {
@@ -307,6 +329,22 @@ public class MoveMap : MonoBehaviour
             playerWinPanel.SetActive(true);
             playerWinPanel.GetComponent<Image>().DOFade(1f, 0.5f);
         }
+    }
+
+    public void ShowHPMP()
+    {
+        Debug.Log("체력체크");
+        playerHPText.text = $"{player.hp} / 100"; // UI 업데이트
+        playerHPGauge.fillAmount = player.hp / 100f;
+
+        playerMPText.text = $"{player.mp} / 100"; // UI 업데이트
+        playerMPGauge.fillAmount = player.mp / 100f;
+
+        enemyHPText.text = $"{enemy.hp} / 150";
+        enemyHPGauge.fillAmount = enemy.hp / 150f;
+
+        enemyMPText.text = $"{enemy.mp} / 100";
+        enemyMPGauge.fillAmount = enemy.mp / 100f;
     }
 
     public IEnumerator ShowAttackCollision(Behavior attackType, bool isplayer)
@@ -329,7 +367,7 @@ public class MoveMap : MonoBehaviour
 
 
         
-        StartCoroutine(AttackDecision(isplayer, data.damage, data.attackPoints, position, data.prefab, data.isBuff));
+        StartCoroutine(AttackDecision(isplayer, data.damage, data.attackPoints, position, data.prefab, data.isBuff, data.soundName));
         
     }
 
@@ -340,7 +378,7 @@ public class MoveMap : MonoBehaviour
             for(int j=0; j<4; j++)
             {
                 // sliceMap[i, j].SetColor(Color.white);
-                sliceMap[i, j].SetColor(Color.black);
+                sliceMap[i, j].SetColor(tileColor);
                 //if((i+1)%2 == (j+1)%2)
                 //{
                 //    sliceMap[i, j].SetColor(Color.white);
@@ -353,7 +391,7 @@ public class MoveMap : MonoBehaviour
         }
     }
 
-    public IEnumerator AttackDecision(bool isPlayer, int attackDamage, List<Vector2> attackPoints, Vector2 attackEffectPosition, GameObject attackPrefab, bool buff)
+    public IEnumerator AttackDecision(bool isPlayer, int attackDamage, List<Vector2> attackPoints, Vector2 attackEffectPosition, GameObject attackPrefab, bool buff, string soundName)
     {
         // 공격타일 색깔변화 Red
 
@@ -417,6 +455,8 @@ public class MoveMap : MonoBehaviour
         GameObject attackEffect = Instantiate(attackPrefab, attackEffectPosition, Quaternion.identity); // 공격이펙트생성
         Destroy(attackEffect, attackDelayTime);
 
+        PlaySound(soundName);
+
         Sequence seq = DOTween.Sequence();
 
         attackEffect.GetComponent<SpriteRenderer>().color = new Color(1f, 1f, 1f, 0);
@@ -442,7 +482,7 @@ public class MoveMap : MonoBehaviour
                     shakePower = 0.1f;
                     Mathf.Clamp(enemy.armor, 0, attackDamage);
 
-                    seq.Append(enemy.gameObject.GetComponent<SpriteRenderer>().DOColor(Color.red, 0.7f));
+                    seq.Append(enemy.gameObject.GetComponent<SpriteRenderer>().DOColor(Color.cyan, 0.7f));
                     seq.Append(enemy.gameObject.GetComponent<SpriteRenderer>().DOColor(Color.white, 0.3f));
                 }
                 else
@@ -452,7 +492,6 @@ public class MoveMap : MonoBehaviour
                 }
                 
                 enemy.hp -= attackDamage - enemy.armor; // 데미지에서 방어도 뺀값
-                
             }
             else
             {
@@ -468,7 +507,7 @@ public class MoveMap : MonoBehaviour
                 }
                 else
                 {
-                    seq.Append(player.gameObject.GetComponent<SpriteRenderer>().DOColor(Color.cyan, 0.7f));
+                    seq.Append(player.gameObject.GetComponent<SpriteRenderer>().DOColor(Color.red, 0.7f));
                     seq.Append(player.gameObject.GetComponent<SpriteRenderer>().DOColor(Color.white, 0.3f));
                 }
                 
@@ -480,8 +519,7 @@ public class MoveMap : MonoBehaviour
             Camera.main.DOShakePosition(2f, shakePower); // 공격받아서 화면흔들림
         }
 
-        
-        CheckHPMP();
+        ShowHPMP();
         TileClear(); // 공격타일 색깔변화 White
     }
 }
