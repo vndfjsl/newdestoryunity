@@ -13,7 +13,8 @@ public enum Behavior
     RIGHT,
     KnifeAttack,
     Pike,
-    Shield
+    Shield,
+    Spear
 }
 
 public class MoveMap : MonoBehaviour
@@ -62,13 +63,14 @@ public class MoveMap : MonoBehaviour
     [Header("맵 구성")]
     public TileBox[] inputMap;
     public TileBox[,] sliceMap = new TileBox[3, 4];
+    public int stage = 1;
 
     [Header("플레이어와 적")]
     public GameObject playerPrefab;
     public GameObject enemyPrefab;
 
-    private Player player;
-    private Enemy enemy;
+    public Player player;
+    public Enemy enemy;
 
     [Header("행동버튼 관련")]
     public GameObject tutorialUI;
@@ -104,6 +106,7 @@ public class MoveMap : MonoBehaviour
     public GameObject attack1Prefab; // 단검
     public GameObject attack2Prefab; // 파이크
     public GameObject attack3Prefab; // 방패
+    public GameObject attack4Prefab; // 창찌르기
     public Image[] attackCollisionPoints; // 행동패널에서의 공격범위 표시.
     public int reminder;
 
@@ -141,14 +144,17 @@ public class MoveMap : MonoBehaviour
 
         SkillDataVO buffData1 = new SkillDataVO(attack3Prefab, -20, 0, new List<int>() { 5 }, new List<Vector2>() { new Vector2(0, 0) }, new Vector3(0.5f,0,0), true, "shield"); // 방 어
         typeData.Add(Behavior.Shield, buffData1);
-        
+
+        SkillDataVO attackData3 = new SkillDataVO(attack4Prefab, 50, 50, new List<int>() { 4, 5, 6 }, new List<Vector2>() { new Vector2(0, 0), new Vector2(1, 0), new Vector2(2, 0) }, new Vector3(0.5f, 0f, 0f), false, "sword");
+        typeData.Add(Behavior.Spear, attackData3);
 
         //타입별 프리팹 책정
 
-
+        
         Tutorial();
         SetMap();
         PlayerSpawn();
+        SkillUnlock();
         InitButtonIndex();
     }
 
@@ -169,6 +175,24 @@ public class MoveMap : MonoBehaviour
         }
 
         
+    }
+
+    public void SkillUnlock()
+    {
+        if(stage <= 1) // 1스테이지 이하면
+        {
+            typeData.Remove(Behavior.Spear);
+            behaviorButtons[(int)Behavior.Spear].SetActive(false);
+            enemy.specialAttack1able = false;
+        }
+        else // 2스테이지
+        {
+            enemy.hp += 50;
+            SkillDataVO attackData3 = new SkillDataVO(attack4Prefab, 50, 50, new List<int>() { 4, 5, 6 }, new List<Vector2>() { new Vector2(0, 0), new Vector2(1, 0), new Vector2(2, 0) }, new Vector3(0.5f, 0f, 0f), false, "sword");
+            typeData.Add(Behavior.Spear, attackData3);
+            behaviorButtons[(int)Behavior.Spear].SetActive(true);
+            enemy.specialAttack1able = true;
+        }
     }
 
     public void PlayerSpawn()
@@ -548,7 +572,8 @@ public class MoveMap : MonoBehaviour
         {
             float shakePower = 0.5f;
             Debug.Log("피까임");
-            
+
+
             if (isPlayer)
             {
                 if(enemy.armor != 0)
@@ -566,7 +591,13 @@ public class MoveMap : MonoBehaviour
                     seq.Append(enemy.gameObject.GetComponent<SpriteRenderer>().DOColor(Color.red, 0.7f));
                     seq.Append(enemy.gameObject.GetComponent<SpriteRenderer>().DOColor(Color.white, 0.3f));
                 }
-                
+                if (attackPrefab.name == attack4Prefab.name) // 임시로 창 구별. 원래는 dataVO에 넣어야할듯. TODO
+                {
+                    if (enemy.currentX < 3)
+                    {
+                        enemy.PushOut();
+                    }
+                }
                 enemy.hp -= attackDamage - enemy.armor; // 데미지에서 방어도 뺀값
             }
             else
@@ -586,8 +617,13 @@ public class MoveMap : MonoBehaviour
                     seq.Append(player.gameObject.GetComponent<SpriteRenderer>().DOColor(Color.red, 0.7f));
                     seq.Append(player.gameObject.GetComponent<SpriteRenderer>().DOColor(Color.white, 0.3f));
                 }
-                
-                
+                if (attackPrefab.name == attack4Prefab.name) // 임시로 창 구별. 원래는 dataVO에 넣어야할듯. TODO
+                {
+                    if (player.currentX > 0)
+                    {
+                        player.PushOut();
+                    }
+                }
                 player.hp -= attackDamage - player.armor; // 데미지에서 방어도 뺀값
                 
             }

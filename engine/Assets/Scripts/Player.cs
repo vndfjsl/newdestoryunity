@@ -81,11 +81,20 @@ public class Player : MonoBehaviour
             case (int)Behavior.Shield:
                 StartCoroutine(MoveMap.Instance.ShowAttackCollision(Behavior.Shield, true));
                 break;
+            case (int)Behavior.Spear:
+                StartCoroutine(MoveMap.Instance.ShowAttackCollision(Behavior.Spear, true));
+                break;
         }
         // transform.position = MoveMap.Instance.sliceMap[currentY, currentX].transform.position;
         transform.DOMove(MoveMap.Instance.sliceMap[currentY, currentX].transform.position - new Vector3(0.5f,0,0), 1f);
         behaviorIndex = (behaviorIndex + 1) % 3;
         // hp -= 20;
+    }
+
+    public void PushOut()
+    {
+        currentX -= 1;
+        transform.DOMove(MoveMap.Instance.sliceMap[currentY, currentX].transform.position - new Vector3(0.5f, 0, 0), 1f);
     }
 
     public void InitBehavior()

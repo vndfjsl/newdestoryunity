@@ -9,4 +9,18 @@ public class Scene : MonoBehaviour
     {
         SceneManager.LoadScene("Game");
     }
+
+    public void Enter2Stage()
+    {
+        // TODO..
+    }
+
+    public void TurnBackToStage()
+    {
+        MoveMap.Instance.stage++;
+        MoveMap.Instance.SkillUnlock();
+        MoveMap.Instance.drawPanel.SetActive(false);
+        MoveMap.Instance.playerWinPanel.SetActive(false);
+        MoveMap.Instance.enemyWinPanel.SetActive(false);
+    }
 }

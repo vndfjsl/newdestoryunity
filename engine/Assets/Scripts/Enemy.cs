@@ -13,6 +13,7 @@ public class Enemy : MonoBehaviour
 
     public List<int> nextBehavior = new List<int>();
     public int behaviorIndex = 0;
+    public bool specialAttack1able = true;
 
     public void Start()
     {
@@ -59,9 +60,19 @@ public class Enemy : MonoBehaviour
                 Debug.Log("Enemy Shield!");
                 StartCoroutine(MoveMap.Instance.ShowAttackCollision(Behavior.Shield, false));
                 break;
+            case (int)Behavior.Spear:
+                Debug.Log("Enemy SpecialSpear!");
+                StartCoroutine(MoveMap.Instance.ShowAttackCollision(Behavior.Spear, false));
+                break;
         }
         transform.DOMove(MoveMap.Instance.sliceMap[currentY, currentX].transform.position + new Vector3(0.5f, 0, 0), 1f);
         behaviorIndex = (behaviorIndex + 1) % 3;
+    }
+
+    public void PushOut()
+    {
+        currentX += 1;
+        transform.DOMove(MoveMap.Instance.sliceMap[currentY, currentX].transform.position + new Vector3(0.5f, 0, 0), 1f);
     }
 
     public void EnemySetBehavior()
@@ -70,55 +81,41 @@ public class Enemy : MonoBehaviour
 
         //for (int i=0; i<3; i++)
         //{
-            List<int> bhArr = new List<int>() { 0, 1, 2, 3, 4, 5, 6 };
-            if (currentY <= 0)
-            {
-                bhArr.Remove((int)Behavior.UP);
-            }
-            else if (currentY >= 2)
-            {
-                bhArr.Remove((int)Behavior.DOWN);
-            }
+            List<int> bhArr = new List<int>() { 0, 1, 2, 3, 4, 5, 6, 7 };
+        if (currentY <= 0)
+        {
+            bhArr.Remove((int)Behavior.UP);
+        }
+        else if (currentY >= 2)
+        {
+            bhArr.Remove((int)Behavior.DOWN);
+        }
 
-            if (currentX <= 0)
-            {
-                bhArr.Remove((int)Behavior.LEFT);
-            }
-            else if (currentX >= 3)
-            {
-                bhArr.Remove((int)Behavior.RIGHT);
-            }
+        if (currentX <= 0)
+        {
+            bhArr.Remove((int)Behavior.LEFT);
+        }
+        else if (currentX >= 3)
+        {
+            bhArr.Remove((int)Behavior.RIGHT);
+        }
 
-            if (mp < 10)
-            {
-                bhArr.Remove((int)Behavior.KnifeAttack);
-            }
-            if (mp < 30)
-            {
-                bhArr.Remove((int)Behavior.Pike);
-            }
+        if (!specialAttack1able)
+        {
+            bhArr.Remove((int)Behavior.Spear);
+        }
 
-            int randBhIndex = Random.Range(0, bhArr.Count);
-            nextBehavior.Add(bhArr[randBhIndex]);
+        if (mp < 10)
+        {
+            bhArr.Remove((int)Behavior.KnifeAttack);
+        }
 
+        if (mp < 30)
+        {
+            bhArr.Remove((int)Behavior.Pike);
+        }
 
-                /*
-                int behaviorType = Random.Range(0, 7);
-                if(mp <= 0)
-                {
-
-                }
-
-                if (currentY <= 0 && behaviorType == (int)Behavior.UP) // 위쪽끝이면
-                    behaviorType = (int)Behavior.DOWN;
-                else if (currentY >= 2 && behaviorType == (int)Behavior.DOWN)
-                    behaviorType = (int)Behavior.UP;
-                if (currentX <= 0 && behaviorType == (int)Behavior.LEFT) // 위쪽끝이면
-                    behaviorType = (int)Behavior.RIGHT;
-                else if (currentX >= 3 && behaviorType == (int)Behavior.RIGHT)
-                    behaviorType = (int)Behavior.LEFT;
-                */
-                //nextBehavior.Add(behaviorType);
-        
+        int randBhIndex = Random.Range(0, bhArr.Count);
+        nextBehavior.Add(bhArr[randBhIndex]);
     }
 }
