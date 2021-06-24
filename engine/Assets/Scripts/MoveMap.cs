@@ -104,8 +104,11 @@ public class MoveMap : MonoBehaviour
     public GameObject attack1Prefab; // 단검
     public GameObject attack2Prefab; // 파이크
     public GameObject attack3Prefab; // 방패
+    public Image[] attackCollisionPoints; // 행동패널에서의 공격범위 표시.
+    public int reminder;
 
-    
+
+
     private AudioSource audioSource;
     [Header("소 리")]
     public AudioClip swordSound;
@@ -123,9 +126,11 @@ public class MoveMap : MonoBehaviour
         audioSource = GetComponent<AudioSource>();
 
         //타입별 마나코스트 책정
-        SkillDataVO attackData1 = new SkillDataVO(attack1Prefab, 20, 40, new List<Vector2>() { new Vector2(0,0), new Vector2(1,0), new Vector3(0,1), new Vector3(0,-1)}, new Vector3(0.5f, 0, 0), false, "sword");
+        SkillDataVO attackData1 = new SkillDataVO(attack1Prefab, 20, 40, new List<int>() {5,2,6,8 }, new List<Vector2>() { new Vector2(0,0), new Vector2(1,0), new Vector3(0,1), new Vector3(0,-1)}, new Vector3(0.5f, 0, 0), false, "sword");
         typeData.Add(Behavior.KnifeAttack, attackData1);
-        SkillDataVO attackData2 = new SkillDataVO(attack2Prefab, 30, 25, new List<Vector2>() { 
+        Debug.Log(typeData[Behavior.KnifeAttack]);
+
+        SkillDataVO attackData2 = new SkillDataVO(attack2Prefab, 30, 25, new List<int>() { 5,2,3,6,8,9 }, new List<Vector2>() { 
             new Vector2(0, 0), 
             new Vector2(0, 1), 
             new Vector2(1, 1), 
@@ -133,7 +138,8 @@ public class MoveMap : MonoBehaviour
             new Vector2(0, -1), 
             new Vector2(1, -1) }, new Vector3(0.5f, 0, 0), false, "spear");
         typeData.Add(Behavior.Pike, attackData2);
-        SkillDataVO buffData1 = new SkillDataVO(attack3Prefab, -20, 0, new List<Vector2>() { new Vector2(0, 0) }, new Vector3(0.5f,0,0), true, "shield"); // 방 어
+
+        SkillDataVO buffData1 = new SkillDataVO(attack3Prefab, -20, 0, new List<int>() { 5 }, new List<Vector2>() { new Vector2(0, 0) }, new Vector3(0.5f,0,0), true, "shield"); // 방 어
         typeData.Add(Behavior.Shield, buffData1);
         
 
@@ -233,7 +239,12 @@ public class MoveMap : MonoBehaviour
             // Debug.Log($"X: {player.currentX}, Y: {player.currentY}");
             
             yield return new WaitForSeconds(2f);
-            CheckHPMP();
+
+            if(CheckHPMP())
+            {
+                yield break;
+            }
+
             player.armor = 0;
             enemy.armor = 0; // 턴끝나서 방어도 초기화
 
@@ -271,6 +282,16 @@ public class MoveMap : MonoBehaviour
         nextBehaviorButton.interactable = true;
     }
 
+    public void OnlyPlayerBhReset() // 고른거 리셋만해주는놈
+    {
+        keyInputCount = 0;
+        player.InitBehavior(); // 행동넣은거 초기화
+        for (int i = 0; i < 3; i++)
+        {
+            inGameKeyInput[i].sprite = null; // 스킬UI 초기화
+        }
+    }
+
     public void LoadPanel() // 행동버튼누르는패널 보이게
     {
         behaviorSetting.SetActive(true);
@@ -286,17 +307,67 @@ public class MoveMap : MonoBehaviour
         behaviorSetting.SetActive(false);
     }
 
+    public void InitattackCollision()
+    {
+        foreach (Image image in attackCollisionPoints)
+        {
+            image.color = new Color32(231,231,231,255); // 초기화
+        }
+    }
+
     public void PressKey(int buttonIndex)
     {
-        if (keyInputCount < 3)
+        if (reminder == buttonIndex || buttonIndex <= 3) // 똑같은거면 || 이동이면
         {
-            player.nextBehavior.Add(buttonIndex);
-            inGameKeyInput[keyInputCount].sprite = keySprite[buttonIndex];
-            keyInputCount++;
+            reminder = -1;
+            if (buttonIndex <= 3) // 공격아니면 초기화, 아니면 보여줘야함
+                InitattackCollision();
+
+            if (keyInputCount < 3)
+            {
+                player.nextBehavior.Add(buttonIndex);
+                inGameKeyInput[keyInputCount].sprite = keySprite[buttonIndex];
+                keyInputCount++;
+            }
+            else
+            {
+                Debug.LogError("3개이상 입력하셨습니다.");
+            }
         }
-        else
+        else // 안똑같은거면
         {
-            Debug.LogError("3개이상 입력하셨습니다.");
+            InitattackCollision();
+
+            reminder = buttonIndex;
+            SkillDataVO data = typeData[(Behavior)buttonIndex];
+            bool playerPos = true;
+
+            foreach(int index in data.skillCollisions)
+            {
+                if (playerPos) // 맨처음이면(플레이어위치)
+                {
+                    if (data.isBuff)
+                    {
+                        attackCollisionPoints[index - 1].color = Color.yellow;
+                    }
+                    else
+                    {
+                        attackCollisionPoints[index - 1].color = Color.blue; // 플레이어위치
+                    }
+                    playerPos = false;
+                }
+                else
+                {
+                    if(data.isBuff)
+                    {
+                        attackCollisionPoints[index - 1].color = Color.yellow;
+                    }
+                    else
+                    {
+                        attackCollisionPoints[index - 1].color = Color.red;
+                    }
+                }
+            }
         }
     }
 
@@ -308,7 +379,7 @@ public class MoveMap : MonoBehaviour
         }
     }
 
-    public void CheckHPMP()
+    public bool CheckHPMP() // true 리턴시 게임끝
     {
 
         if (player.hp <= 0 && enemy.hp <= 0)
@@ -316,19 +387,23 @@ public class MoveMap : MonoBehaviour
             Debug.Log("Draw!");
             drawPanel.SetActive(true);
             drawPanel.GetComponent<Image>().DOFade(1f, 0.5f);
+            return true;
         }
         else if (player.hp <= 0) // 피 0인지 체크
         {
             Debug.Log("Enemy is Win!");
             enemyWinPanel.SetActive(true);
             enemyWinPanel.GetComponent<Image>().DOFade(1f, 0.5f);
+            return true;
         }
         else if (enemy.hp <= 0)
         {
             Debug.Log("Player is Win!");
             playerWinPanel.SetActive(true);
             playerWinPanel.GetComponent<Image>().DOFade(1f, 0.5f);
+            return true;
         }
+        return false;
     }
 
     public void ShowHPMP()
@@ -461,6 +536,7 @@ public class MoveMap : MonoBehaviour
 
         attackEffect.GetComponent<SpriteRenderer>().color = new Color(1f, 1f, 1f, 0);
         seq.Append(attackEffect.GetComponent<SpriteRenderer>().DOFade(1f, 0.4f));
+
         if (!isPlayer) // 적이면 이펙트 회전
         {
             attackEffect.GetComponent<SpriteRenderer>().flipX = true;
