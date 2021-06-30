@@ -8,6 +8,6 @@ public class BehaviorButton : MonoBehaviour
 
     public void PressButton()
     {
-        MoveMap.Instance.PressKey(buttonIndex);
+        GameManager.Instance.PressKey(buttonIndex);
     }
 }

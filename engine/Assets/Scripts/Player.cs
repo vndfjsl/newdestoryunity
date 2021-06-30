@@ -73,20 +73,20 @@ public class Player : MonoBehaviour
                 }
                 break;
             case (int)Behavior.KnifeAttack:
-                StartCoroutine(MoveMap.Instance.ShowAttackCollision(Behavior.KnifeAttack, true)); // 뒤에true는 플레이어인지아닌지검사
+                StartCoroutine(GameManager.Instance.ShowAttackCollision(Behavior.KnifeAttack, true)); // 뒤에true는 플레이어인지아닌지검사
                 break;
             case (int)Behavior.Pike:
-                StartCoroutine(MoveMap.Instance.ShowAttackCollision(Behavior.Pike, true));
+                StartCoroutine(GameManager.Instance.ShowAttackCollision(Behavior.Pike, true));
                 break;
             case (int)Behavior.Shield:
-                StartCoroutine(MoveMap.Instance.ShowAttackCollision(Behavior.Shield, true));
+                StartCoroutine(GameManager.Instance.ShowAttackCollision(Behavior.Shield, true));
                 break;
             case (int)Behavior.Spear:
-                StartCoroutine(MoveMap.Instance.ShowAttackCollision(Behavior.Spear, true));
+                StartCoroutine(GameManager.Instance.ShowAttackCollision(Behavior.Spear, true));
                 break;
         }
         // transform.position = MoveMap.Instance.sliceMap[currentY, currentX].transform.position;
-        transform.DOMove(MoveMap.Instance.sliceMap[currentY, currentX].transform.position - new Vector3(0.5f,0,0), 1f);
+        transform.DOMove(GameManager.Instance.sliceMap[currentY, currentX].transform.position - new Vector3(0.5f,0,0), 1f);
         behaviorIndex = (behaviorIndex + 1) % 3;
         // hp -= 20;
     }
@@ -94,7 +94,7 @@ public class Player : MonoBehaviour
     public void PushOut()
     {
         currentX -= 1;
-        transform.DOMove(MoveMap.Instance.sliceMap[currentY, currentX].transform.position - new Vector3(0.5f, 0, 0), 1f);
+        transform.DOMove(GameManager.Instance.sliceMap[currentY, currentX].transform.position - new Vector3(0.5f, 0, 0), 1f);
     }
 
     public void InitBehavior()

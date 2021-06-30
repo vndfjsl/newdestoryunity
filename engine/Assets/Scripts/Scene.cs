@@ -17,10 +17,10 @@ public class Scene : MonoBehaviour
 
     public void TurnBackToStage()
     {
-        MoveMap.Instance.stage++;
-        MoveMap.Instance.SkillUnlock();
-        MoveMap.Instance.drawPanel.SetActive(false);
-        MoveMap.Instance.playerWinPanel.SetActive(false);
-        MoveMap.Instance.enemyWinPanel.SetActive(false);
+        GameManager.Instance.stage++;
+        GameManager.Instance.SkillUnlock();
+        GameManager.Instance.drawPanel.SetActive(false);
+        GameManager.Instance.playerWinPanel.SetActive(false);
+        GameManager.Instance.enemyWinPanel.SetActive(false);
     }
 }

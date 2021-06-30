@@ -50,29 +50,29 @@ public class Enemy : MonoBehaviour
                 break;
             case (int)Behavior.KnifeAttack:
                 Debug.Log("Enemy Attack! Knife");
-                StartCoroutine(MoveMap.Instance.ShowAttackCollision(Behavior.KnifeAttack, false));
+                StartCoroutine(GameManager.Instance.ShowAttackCollision(Behavior.KnifeAttack, false));
                 break;
             case (int)Behavior.Pike:
                 Debug.Log("Enemy Attack! Pike");
-                StartCoroutine(MoveMap.Instance.ShowAttackCollision(Behavior.Pike, false));
+                StartCoroutine(GameManager.Instance.ShowAttackCollision(Behavior.Pike, false));
                 break;
             case (int)Behavior.Shield:
                 Debug.Log("Enemy Shield!");
-                StartCoroutine(MoveMap.Instance.ShowAttackCollision(Behavior.Shield, false));
+                StartCoroutine(GameManager.Instance.ShowAttackCollision(Behavior.Shield, false));
                 break;
             case (int)Behavior.Spear:
                 Debug.Log("Enemy SpecialSpear!");
-                StartCoroutine(MoveMap.Instance.ShowAttackCollision(Behavior.Spear, false));
+                StartCoroutine(GameManager.Instance.ShowAttackCollision(Behavior.Spear, false));
                 break;
         }
-        transform.DOMove(MoveMap.Instance.sliceMap[currentY, currentX].transform.position + new Vector3(0.5f, 0, 0), 1f);
+        transform.DOMove(GameManager.Instance.sliceMap[currentY, currentX].transform.position + new Vector3(0.5f, 0, 0), 1f);
         behaviorIndex = (behaviorIndex + 1) % 3;
     }
 
     public void PushOut()
     {
         currentX += 1;
-        transform.DOMove(MoveMap.Instance.sliceMap[currentY, currentX].transform.position + new Vector3(0.5f, 0, 0), 1f);
+        transform.DOMove(GameManager.Instance.sliceMap[currentY, currentX].transform.position + new Vector3(0.5f, 0, 0), 1f);
     }
 
     public void EnemySetBehavior()
